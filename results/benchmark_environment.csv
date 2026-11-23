@@ -1,11 +1,11 @@
 ﻿Thông số,Giá trị
-CPU,11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz
+CPU,AMD Ryzen 5 5500U with Radeon Graphics
 Số lõi vật lý / luồng logic,6 / 12
-RAM tổng (GB),7.77
+RAM tổng (GB),7.34
 Hệ điều hành,Windows 11 (10.0.26200)
 Python,3.14.6
-pandas,3.1.1
-scikit-learn,1.9.1
+pandas,3.0.3
+scikit-learn,1.9.0
 PySpark,4.3.0
-Java,"java version ""22.0.1"" 2024-04-16"
+Java,"openjdk version ""17.0.20.1"" 2026-08-18"
 Spark master,local[*]
