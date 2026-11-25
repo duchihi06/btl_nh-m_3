@@ -1,0 +1,10 @@
+===============================================================================================
+KẾT QUẢ KIỂM THỬ 4 KỊCH BẢN CHUẨN TRONG ĐỀ CƯƠNG (MÔ HÌNH DEMO XGBOOST)
+Ngưỡng phân vị tập Train: P50 = 3356 xe/giờ | P85 = 5484 xe/giờ
+===============================================================================================
+  Kịch bản                                       Thông số đầu vào  Lưu lượng dự báo (xe/giờ) Mức độ cảnh báo                                                   Đánh giá tính hợp lý thực tế
+Kịch bản 1     8h sáng, Thứ Ba, Tháng 10, Không lễ, 15°C, Mây 40%                       5887  Nguy cơ ùn tắc   Giờ cao điểm sáng ngày đi làm -> lưu lượng rất cao, cảnh báo nguy cơ ùn tắc.
+Kịch bản 2     3h sáng, Thứ Ba, Tháng 10, Không lễ, 10°C, Mây 20%                        345    Thông thoáng       Khung giờ đêm khuya rạng sáng -> rất ít phương tiện, đường thông thoáng.
+Kịch bản 3 15h chiều, Chủ Nhật, Tháng 10, Không lễ, 18°C, Mây 30%                       4319        Đông đúc     Buổi chiều cuối tuần nhu cầu đi lại vui chơi cao vừa phải -> mức đông đúc.
+Kịch bản 4   8h sáng, Thứ Ba, Tháng 10, Có Ngày lễ, 15°C, Mây 40%                       4450        Đông đúc Cùng 8h sáng Thứ Ba nhưng là Ngày lễ -> lưu lượng giảm mạnh so với Kịch bản 1.
+===============================================================================================

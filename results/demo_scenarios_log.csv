@@ -1,0 +1,5 @@
+﻿Kịch bản,Thông số đầu vào,Lưu lượng dự báo (xe/giờ),Hiển thị lưu lượng,Mức độ cảnh báo,Chi tiết cảnh báo,Đánh giá tính hợp lý thực tế
+Kịch bản 1,"8h sáng, Thứ Ba, Tháng 10, Không lễ, 15°C, Mây 40%",5887,"5,887 xe/giờ",Nguy cơ ùn tắc,Nguy cơ ùn tắc — Nguy cơ ùn tắc (>= P85 = 5484 xe/giờ),"Giờ cao điểm sáng ngày đi làm -> lưu lượng rất cao, cảnh báo nguy cơ ùn tắc."
+Kịch bản 2,"3h sáng, Thứ Ba, Tháng 10, Không lễ, 10°C, Mây 20%",345,345 xe/giờ,Thông thoáng,Thông thoáng — Thông thoáng (< P50 = 3356 xe/giờ),"Khung giờ đêm khuya rạng sáng -> rất ít phương tiện, đường thông thoáng."
+Kịch bản 3,"15h chiều, Chủ Nhật, Tháng 10, Không lễ, 18°C, Mây 30%",4319,"4,319 xe/giờ",Đông đúc,Đông đúc — Đông đúc (P50 = 3356 – P85 = 5484 xe/giờ),Buổi chiều cuối tuần nhu cầu đi lại vui chơi cao vừa phải -> mức đông đúc.
+Kịch bản 4,"8h sáng, Thứ Ba, Tháng 10, Có Ngày lễ, 15°C, Mây 40%",4450,"4,450 xe/giờ",Đông đúc,Đông đúc — Đông đúc (P50 = 3356 – P85 = 5484 xe/giờ),Cùng 8h sáng Thứ Ba nhưng là Ngày lễ -> lưu lượng giảm mạnh so với Kịch bản 1.
