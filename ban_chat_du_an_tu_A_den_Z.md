@@ -1,356 +1,323 @@
-# Cẩm Nang Giải Ngố Toàn Tập: Bản Chất Dự Án Từ A Đến Z
-## (Viết Riêng Cho Người Mới Tinh — Có Bảng Chú Thích Toàn Bộ 55 Từ Khóa Từ Con Số 0 Trước Khi Đi Vào Bài Toán)
+# Cẩm Nang Bản Chất Dự Án Từ A Đến Z (Theo Đúng Trình Tự Nhân – Quả 7 Bước)
+## Từ Thu Thập Dữ Liệu → Đọc Hiểu EDA Để Bắt Bệnh → Tiền Xử Lý → Tạo Đặc Trưng & Xuất Parquet/JSON → Thiết Kế Model & Tham Số → Đánh Giá → Thực Nghiệm Big Data PySpark
 
-> **Quy tắc của tài liệu này:**  
-> Bạn là người mới bắt đầu (*newbie*), nên chúng ta sẽ **không dùng một thuật ngữ khó hiểu này để giải thích cho một thuật ngữ khó hiểu khác**.  
-> **Ngay ở Phần 1 dưới đây là Bảng Chú Thích 55 Từ Khóa** được sắp xếp theo thứ tự từ dễ nhất đến nâng cao (từ đứng trước làm nền cho từ đứng sau), giải thích 100% bằng tiếng Việt đời thường và ví dụ thực tế. Bạn chỉ cần đọc Phần 1 này trước, sau đó đọc xuống các phần dưới sẽ thấy mọi thứ trong cả 4 Notebook sáng tỏ hoàn toàn!
-
----
-
-## PHẦN 1: BẢNG CHÚ THÍCH TOÀN BỘ TỪ KHÓA CHUYÊN NGÀNH (ĐỌC TRƯỚC TIÊN!)
-
-### Nhóm A: Các từ khóa về Bảng dữ liệu & Thống kê cơ bản (Hiểu từ con số 0)
-
-| STT | Từ khóa trong bài | Giải thích bằng tiếng đời thường (Không dùng thuật ngữ) | Ví dụ ngay trong bài của nhóm |
-| :---: | :--- | :--- | :--- |
-| **1** | **Bản ghi / Mẫu**<br>*(Row / Record / Sample)* | Là **1 hàng ngang (1 dòng)** trong bảng dữ liệu Excel. Mỗi dòng ghi lại thông tin của một sự việc. | Mỗi dòng trong bảng là thông tin giao thông và thời tiết của **1 giờ đồng hồ** trên đường cao tốc. |
-| **2** | **Thuộc tính / Biến**<br>*(Column / Variable)* | Là **1 cột dọc** trong bảng dữ liệu. Mỗi cột đo một thông tin cụ thể. | File gốc có **9 cột** (như cột ngày giờ, cột nhiệt độ, cột lượng mưa, cột số lượng xe...). |
-| **3** | **Biến mục tiêu / Đáp án ($y$)**<br>*(Target / Label)* | Là **cột kết quả cuối cùng mà ta muốn máy tính dự đoán ra** (giống như đáp án của một bài toán). | Chính là cột **`traffic_volume`** (tổng số xe ô tô chạy qua đường cao tốc trong 1 giờ). |
-| **4** | **Đặc trưng đầu vào ($X$)**<br>*(Feature / Input)* | Là **các cột dữ kiện đề bài** cung cấp manh mối để máy tính nhìn vào đó mà đoán ra đáp án $y$. | Là các cột như: mấy giờ (`hour`), thứ mấy (`day_of_week`), nhiệt độ bao nhiêu (`temp_c`), có mưa không (`rain_1h`)... |
-| **5** | **Biến định lượng**<br>*(Numerical Variable)* | Là cột mà giá trị bên trong là **CON SỐ đo đếm được, cộng trừ nhân chia được** (chia làm 2 loại nhỏ: *số thực liên tục* có dấu phẩy như nhiệt độ `15,2°C`, và *số nguyên rời rạc* đếm từng cái như `5.000` chiếc xe). | 5 cột số trong bài là: `temp_c` (nhiệt độ), `rain_1h` (mưa), `snow_1h` (tuyết), `clouds_all` (% mây), `traffic_volume` (số xe). |
-| **6** | **Biến phân loại / Biến chữ**<br>*(Categorical Variable)* | Là cột mà giá trị bên trong là **CHỮ dùng để chia nhóm**, không cộng trừ trực tiếp được. | Cột `weather_main` chứa các chữ chỉ loại thời tiết (`"Clear"`, `"Rain"`, `"Snow"`...) và cột `holiday` chứa tên ngày lễ. |
-| **7** | **Biến nhị phân `0/1`**<br>*(Binary / Dummy Variable)* | Là cột số chỉ nhận **đúng 2 giá trị: `1` (Có / Đúng) hoặc `0` (Không / Sai)**. Dùng để biến các câu hỏi Có/Không thành con số cho máy tính hiểu. | Cột `is_weekend`: nếu là Thứ Bảy/Chủ Nhật thì ghi số `1`, nếu là ngày thường thì ghi số `0`. |
-| **8** | **Giá trị khuyết (`NaN` / `Null`)**<br>*(Missing Value)* | Là **ô bị bỏ trống không có dữ liệu** trong bảng (khi lên Python nó hiện chữ `NaN` — viết tắt của *Not a Number*). | Trong 6 năm, có `11.987` giờ đồng hồ trạm đếm xe bị mất tín hiệu nên không có số đo (bị trống / `NaN`). |
-| **9** | **Giá trị ngoại lai**<br>*(Outlier)* | Là một con số **lớn bất thường hoặc nhỏ bất thường, lệch hẳn ra ngoài** so với đám đông. Có 2 nguyên nhân: **(1) Ngoại lai vật lý** (do máy đo bị chập mạch ghi sai số vô lý ngoài đời không thể có); **(2) Đột biến thật** (hiện tượng hiếm nhưng có thật ngoài đời). | **(1) Do hỏng máy đo:** Nhiệt độ `-273,15°C` (10 dòng) và lượng mưa `9.831,3 mm/giờ` (1 dòng) $\rightarrow$ **phải xóa bỏ**. **(2) Đột biến thật:** Giờ cao điểm có tới `7.280` xe/giờ $\rightarrow$ là số xe thật, **cấm xóa**! |
-| **10** | **Trung bình cộng (`Mean`)** | Lấy tổng tất cả các số trong cột cộng lại rồi chia cho số dòng. | Lưu lượng xe trung bình (`Mean`) của cả bộ dữ liệu là khoảng `3.291` xe/giờ. |
-| **11** | **Trung vị (`Median` / `50%`) & Tứ phân vị (`25%`, `75%`)** | Hãy tưởng tượng xếp tất cả các dòng trong bảng theo thứ tự từ **ít xe nhất (0%) đến đông xe nhất (100%)**:<br>• Con số đứng ở vị trí **1/4 đầu hàng (25%)** gọi là *Phân vị 25%*;<br>• Con số đứng **chính giữa hàng (50%)** gọi là **Trung vị (`Median`)**;<br>• Con số đứng ở vị trí **3/4 hàng (75%)** gọi là *Phân vị 75%* (tức chỉ có 25% số giờ trong năm đông xe hơn mức này). | Trong bảng thống kê `describe()`: `traffic_volume` có mốc `25% = 1.250 xe`, `50% (Trung vị) = 3.429 xe`, và mốc `75% = 4.952 xe` (ở Note 3 lấy mốc 75% của tập học là `4.926 xe` làm ngưỡng báo động "Đường đang rất đông"). |
-| **12** | **`IQR` (Khoảng tứ phân vị) & `Z-score`** | Là hai công thức toán thống kê hay dùng để tự động cắt bỏ các con số nằm ở hai đầu quá cao hoặc quá thấp của một cột số. | Nhóm bạn **không dùng IQR hay Z-score để cắt cột `traffic_volume`** vì làm thế sẽ cắt mất luôn các giờ cao điểm đông xe và các giờ đêm khuya vắng xe! |
-| **13** | **Độ lệch chuẩn (`Std`)**<br>*(Standard Deviation)* | Con số đo xem các giá trị trong cột **"nhảy múa" xa khỏi số trung bình nhiều hay ít**.<br>• `Std` nhỏ = dữ liệu rất đều nhau, ít biến động.<br>• `Std` lớn = dữ liệu lúc cực thấp, lúc cực cao. | Trước khi xóa dòng mưa lỗi `9.831,3 mm`, độ lệch chuẩn `Std` của cột mưa vọt lên tới **`48,81 mm`**. Sau khi xóa đúng 1 dòng lỗi đó, `Std` giảm về chỉ còn **`0,77 mm`**! |
-| **14** | **Phân phối (`Distribution`) & Phân phối 2 đỉnh (`Bimodal`)** | Là biểu đồ vẽ xem các con số tập trung đông ở khoảng nào và thưa ở khoảng nào. Nếu biểu đồ nhô cao lên ở **2 chỗ khác nhau** (giống lưng lạc đà 2 bướu) thì gọi là **Phân phối 2 đỉnh (`Bimodal`)**. | Biểu đồ số lượng xe ở Note 1 có **2 đỉnh nhô cao**: 1 đỉnh ở khoảng `300 – 800 xe/giờ` (đại diện cho các giờ ban đêm) và 1 đỉnh ở khoảng `4.500 – 5.500 xe/giờ` (đại diện cho các giờ ban ngày). |
-| **15** | **Hệ số tương quan (`Correlation` / `Pearson r`)** | Một con số nằm từ **`-1,0` đến `+1,0`** dùng để đo xem **2 cột số có "đi cùng nhịp" với nhau không**:<br>• **Gần `+1,0` (Tương quan dương):** Cột A tăng thì cột B cũng tăng theo.<br>• **Gần `-1,0` (Tương quan âm):** Cột A tăng thì cột B lại giảm.<br>• **Gần `0`:** Hai cột không có quan hệ tỉ lệ thẳng với nhau. | Giữa số xe giờ trước (`lag_1h`) và số xe giờ này (`traffic_volume`) có hệ số tương quan **`r = +0,91`** (cực mạnh: giờ trước đông thì giờ này cũng đông!). |
-| **16** | **Đa cộng tuyến**<br>*(Multicollinearity)* | Hiện tượng trong bảng có **2 hay nhiều cột đầu vào mang thông tin trùng lặp nhau** (ví dụ vừa có cột "Tuổi", vừa có cột "Năm sinh"). Khi đưa cả hai vào một phương trình cộng trừ, máy tính sẽ bị rối, làm các hệ số nhân phình to bất thường (gọi là *nổ hệ số*). | Cột `weather_description` (mô tả mưa nhỏ, mưa vừa) trùng ý với cột `weather_main` (mưa) nên nếu giữ cả hai sẽ gây **đa cộng tuyến** $\rightarrow$ vì vậy phải bỏ `weather_description`. |
+> **Cách đọc tài liệu này để hiểu thông suốt 100% dự án:**
+> * **Mở file này ở chế độ Xem trước Markdown (nhấn `Ctrl + Shift + V` trên VS Code)** để nhìn thấy **toàn bộ các biểu đồ EDA và biểu đồ kết quả hiện ra trực tiếp ngay trong bài**!
+> * Dự án Khoa học Dữ liệu không phải là những đoạn code rời rạc, mà là một **chuỗi Nhân – Quả chặt chẽ**: phải **Thu thập & Hiểu dữ liệu (Bước 1)** $\rightarrow$ mới vẽ **EDA để soi ra lỗi và quy luật (Bước 2)** $\rightarrow$ từ từng lỗi trong EDA mới chọn đúng **phương pháp Tiền xử lý (Bước 3)** $\rightarrow$ từ từng quy luật trong EDA mới **Tạo đặc trưng và đóng gói ra 2 file `.parquet` + `.json` (Bước 4)** $\rightarrow$ rồi mới **Chia dữ liệu & Huấn luyện Model (Bước 5)** $\rightarrow$ **Đánh giá & Phân tích lỗi (Bước 6)** $\rightarrow$ **Thử tải Big Data với PySpark (Bước 7)**.
+> * Ở **mỗi một bước**, tài liệu đều trả lời đủ 3 câu hỏi cho bạn: **(1) Xử lý cụ thể như thế nào? (2) Tại sao phải dùng phương pháp này? (3) Có những phương pháp nào khác và tại sao KHÔNG dùng chúng?**
 
 ---
 
-### Nhóm B: Các từ khóa về Làm sạch & Chế biến dữ liệu (Ở Note 1 & Note 2)
+## MỞ ĐẦU: BẢNG CHÚ THÍCH NHANH CÁC TỪ KHÓA CƠ BẢN (ĐỌC LƯỚT ĐỂ KHÔNG BỊ VẤP THUẬT NGỮ)
 
-| STT | Từ khóa trong bài | Giải thích bằng tiếng đời thường | Ví dụ ngay trong bài của nhóm |
-| :---: | :--- | :--- | :--- |
-| **17** | **`EDA`**<br>*(Exploratory Data Analysis)* | **Phân tích khám phá dữ liệu:** Bước mở dữ liệu thô ra đếm số dòng, kiểm tra lỗi và vẽ biểu đồ để tìm hiểu tính chất của dữ liệu *trước khi* bắt tay vào sửa chữa hay dạy máy học. | Toàn bộ **Notebook 01** chính là làm `EDA`. |
-| **18** | **Chuỗi thời gian**<br>*(Time Series)* | Dữ liệu được đo nối tiếp nhau theo từng nấc đồng hồ (giờ này qua giờ khác). Với chuỗi thời gian, **thứ tự thời gian trước – sau là tuyệt đối**, không được xáo trộn dòng. | Dữ liệu đếm xe mỗi giờ 1 lần suốt 6 năm từ 2012 đến 2018. |
-| **19** | **`Reindex` (Trải lên lưới giờ liên tục)** | Dữ liệu gốc bị mất điện thiếu mất `11.987` giờ (ví dụ có dòng 10h sáng rồi nhảy vọt sang 15h chiều). `Reindex` là thao tác **tạo một khung lịch đủ 100% các giờ nối tiếp nhau (10h, 11h, 12h, 13h, 14h, 15h)** rồi áp dữ liệu vào; những giờ bị mất điện (`11h–14h`) sẽ hiện ra thành các dòng trống (`NaN`). | Nhờ `reindex` lên khung `52.551` giờ liên tục ở Ô 5 của Note 2, khi ta đếm lùi 1 dòng hoặc 24 dòng sẽ không bao giờ bị nhảy cóc qua các khoảng mất điện! |
-| **20** | **Nội suy**<br>*(Interpolation / Imputation)* | Là việc dùng toán học **tự đoán/bịa ra một con số giả để điền lấp vào các ô bị trống (`NaN`)** (ví dụ lấy trung bình cộng của giờ trước và giờ sau điền vào giữa). | Vì trạm đo có những lúc mất điện liền cả tuần/cả tháng, nếu **nội suy** sẽ sinh ra hàng nghìn dòng số xe giả tạo $\rightarrow$ nhóm **không nội suy** mà xóa các dòng thiếu sau khi tính xong biến trễ. |
-| **21** | **Tạo đặc trưng**<br>*(Feature Engineering)* | **Chế biến nguyên liệu:** Từ các cột thô ban đầu (như chuỗi ngày giờ hay chữ thời tiết), ta tách, ghép và tính toán ra các **cột số mới thông minh hơn** để máy tính học dễ hơn và đoán trúng hơn. | Từ 7 cột gốc còn lại, ở Note 2 bạn chế biến ra **23 đặc trưng (Bộ A)** và **26 đặc trưng (Bộ B)**. |
-| **22** | **`One-Hot Encoding`**<br>*(Mã hóa 0/1 bằng `pd.get_dummies`)* | Cách biến **1 cột CHỮ phân loại (không có thứ tự lớn bé)** thành **nhiều cột SỐ `0/1`**. Có bao nhiêu loại chữ khác nhau thì tách ra bấy nhiêu cột riêng biệt; dòng nào thuộc loại chữ nào thì cột đó ghi `1`, các cột còn lại ghi `0`. | Cột chữ `weather_main` có **11 kiểu thời tiết** $\rightarrow$ tách thành **11 cột số `0/1`** (`wm_Clear`, `wm_Clouds`, `wm_Rain`...). |
-| **23** | **`Label Encoding`**<br>*(Mã hóa gán số thứ tự 1, 2, 3...)* | Cách biến chữ thành số bằng cách đánh số đếm trực tiếp lên cùng 1 cột: `Clear = 1, Clouds = 2, Rain = 3, Snow = 4...` | Nhóm **KHÔNG DÙNG cách này** cho thời tiết vì máy tính sẽ hiểu nhầm vô lý rằng `"Tuyết (4) gấp đôi Mây (2)"`! |
-| **24** | **Mã hóa chu kỳ vòng tròn**<br>*(Cyclical Encoding: `sin` & `cos`)* | Giờ trong ngày chạy từ `0h` đến `23h` rồi quay vòng lại `0h`. Để máy tính không tưởng `23h` đêm và `0h` sáng cách xa nhau 23 đơn vị, ta dùng công thức lượng giác `sin` và `cos` để **cuộn dãy số `0..23` thành một vòng tròn đồng hồ** sao cho `23h` nằm sát ngay cạnh `0h`. | Chính là 2 đặc trưng `hour_sin` và `hour_cos` ở Note 2. |
-| **25** | **Đặc trưng tương tác**<br>*(Interaction Feature)* | Cột mới được tạo ra bằng cách **kết hợp điều kiện của 2 hay nhiều cột lại với nhau** (vì từng cột đứng riêng thì chưa nói hết ý nghĩa). | Cột `is_rush_hour` (giờ cao điểm) chỉ bằng `1` khi kết hợp đồng thời: **Đúng giờ đi làm/tan tầm (7–9h hoặc 16–18h) VÀ Không phải cuối tuần VÀ Không phải ngày lễ**. |
-| **26** | **Đặc trưng trễ / Biến trễ**<br>*(Lag Feature — hàm `.shift(k)`)* | Cột mới chứa **giá trị của quá khứ lùi lại $k$ tiếng đồng hồ trước đó**. Trong Python, hàm `.shift(1)` nghĩa là kéo cột dữ liệu xuống 1 dòng để lấy giá trị của 1 giờ trước; `.shift(24)` là lấy giá trị của 24 giờ trước. | `lag_1h` (số xe của 1 tiếng trước) và `lag_24h` (số xe của 24 tiếng trước — tức cùng giờ này ngày hôm qua). |
-| **27** | **Trung bình trượt**<br>*(Rolling Mean — hàm `.rolling(3).mean()`)* | Cột mới chứa **trung bình cộng của 3 giờ liên tiếp ngay trước giờ cần dự báo**, trượt dần theo từng giờ để đo xu hướng gần nhất. | `roll_3h`: Khi đứng ở 16h, nó lấy trung bình cộng số xe của **13h, 14h và 15h**. |
-| **28** | **Chuẩn hóa thang đo**<br>*(StandardScaler)* | Đưa tất cả các cột số vốn có độ lớn rất lệch nhau (như cột `lag_1h` lên tới `5.000` xe, trong khi cột `is_holiday` chỉ là `0` hoặc `1`) **co giãn về cùng một thang đo chung** (có trung bình bằng `0` và độ lệch chuẩn bằng `1`). | Dùng cho mô hình cộng trừ phương trình **`Ridge Regression`** ở Note 3 để các cột lớn không đè bẹp các cột nhỏ. |
-| **29** | **File `.csv`, `.parquet`, `.json`** | • **`.csv`:** File bảng dạng văn bản thô (nặng, đọc chậm, không lưu được kiểu ngày giờ nên đọc lại dễ bị lỗi `NaN`).<br>• **`.parquet`:** Định dạng file bảng nén theo cột hiện đại trong Big Data (nhẹ hơn CSV gấp 5–10 lần, đọc cực nhanh, giữ nguyên 100% kiểu dữ liệu).<br>• **`.json`:** File văn bản nhỏ dùng để lưu cấu hình/danh sách tên cột. | Note 1 & 2 đọc dữ liệu thô từ `.csv`, sau đó Note 2 xuất bảng sạch ra `clean_data.parquet` và danh sách tên cột Bộ A/B ra `clean_data.json`. |
-
----
-
-### Nhóm C: Các từ khóa về Học máy, Chia dữ liệu & Thuật toán (Ở Note 3)
-
-| STT | Từ khóa trong bài | Giải thích bằng tiếng đời thường | Ví dụ ngay trong bài của nhóm |
-| :---: | :--- | :--- | :--- |
-| **30** | **Bài toán Hồi quy (`Regression`) vs Phân loại (`Classification`)** | • **Hồi quy (`Regression`):** Dạy máy đoán ra **một CON SỐ** (như đoán có bao nhiêu chiếc xe).<br>• **Phân loại (`Classification`):** Dạy máy đoán ra **một NHÃN / NHÓM** (như đoán Đúng/Sai, Có kẹt xe/Không kẹt xe). | Đề tài của nhóm là bài toán **Hồi quy** (đoán số lượng xe). Ở Note 3 có làm thêm bước phụ là quy đổi số xe `>= 4.926` thành bài toán **Phân loại cảnh báo đông xe**. |
-| **31** | **Mô hình (`Model`) & Huấn luyện (`Fit / Train`) & Dự báo (`Predict`)** | • **Mô hình (`Model`):** Là "bộ não công thức" của máy tính.<br>• **Huấn luyện (`.fit(X, y)`):** Quá trình cho máy đọc dữ liệu cũ kèm đáp án để tự tìm quy luật.<br>• **Dự báo (`.predict(X_moi)`):** Sau khi học xong, đưa câu hỏi mới (không kèm đáp án) để máy tự đoán kết quả. | Trong Note 3: `xgb_model.fit(X_train, y_train)` là cho máy học; `xgb_model.predict(X_test)` là bắt máy làm bài thi. |
-| **32** | **Tập Huấn luyện (`Train Set`) & Tập Kiểm tra (`Test Set`)** | • **Tập `Train`:** Phần dữ liệu quá khứ dùng làm **"Sách bài tập ôn ở nhà"** (máy được nhìn cả câu hỏi lẫn đáp án để học).<br>• **Tập `Test`:** Phần dữ liệu mới được cất riêng làm **"Đề thi thật cuối kỳ"** (máy chưa từng nhìn thấy lúc học, chỉ dùng để chấm điểm cuối cùng). | Từ `34.833` dòng sạch: cắt các năm **2012–2017 (`28.353` dòng = 81,4%) làm Tập `Train`**; giữ riêng **năm 2018 (`6.480` dòng = 18,6%) làm Tập `Test`**. |
-| **33** | **Quá khớp / Học vẹt (`Overfitting`) vs Dưới khớp (`Underfitting`)** | • **`Overfitting` (Học vẹt):** Máy nhớ thuộc lòng từng dòng dữ liệu lúc ôn ở nhà (`Train`) nên điểm ở nhà cao tuyệt đối, nhưng khi đi thi gặp đề mới (`Test`) thì đoán sai bét.<br>• **`Underfitting` (Chưa thuộc bài):** Mô hình quá ngây ngô, không học nổi quy luật nên đoán sai nhiều cả lúc ôn ở nhà lẫn lúc đi thi. | Giống học sinh học vẹt đáp án đề cương (`Overfitting`) so với học sinh không chịu học bài (`Underfitting`). |
-| **34** | **Rò rỉ dữ liệu**<br>*(Data Leakage)* | **Lỗi "gian lận / lộ đề thi":** Khi người lập trình vô tình để lọt thông tin của đáp án hoặc thông tin của tương lai vào trong dữ kiện học của quá khứ. Khiến mô hình lúc chấm điểm ở nhà thì cao ảo, nhưng đem ra thực tế chạy thì hỏng hoàn toàn. | Ví dụ: Nếu lấy dữ liệu năm 2017 đi học để quay lại đoán năm 2014, hoặc khi tính trung bình 3 giờ trước (`roll_3h`) mà lỡ gộp luôn cả số xe của giờ hiện tại cần đoán vào! |
-| **35** | **Tham số (`Parameters`) vs Siêu tham số (`Hyperparameters`)** | • **Tham số:** Các hệ số bên trong mà máy tính *tự tìm ra* trong lúc học.<br>• **Siêu tham số:** Các **"nút vặn cài đặt từ bên ngoài"** mà con người phải chọn trước cho máy (ví dụ: quy định cho máy trồng bao nhiêu cây quyết định, mỗi cây sâu tối đa mấy tầng). | Ở Note 3, bạn của bạn thử nghiệm **72 bộ siêu tham số** khác nhau của XGBoost (như số cây `n_estimators = 100, 200, 300`; độ sâu `max_depth = 4, 6, 8`...). |
-| **36** | **Kiểm định chéo (`Cross-Validation` / `CV`) & `Fold` (Vòng thi thử)** | Để biết bộ "nút vặn siêu tham số" nào tốt nhất mà **không được phép lấy đề thi thật cuối kỳ (`Test`) ra thử**, người ta chia ngay phần dữ liệu ôn tập (`Train`) thành nhiều khúc để tổ chức **nhiều vòng tự ôn – tự thi thử (mỗi vòng gọi là 1 `Fold`)**, rồi lấy điểm trung bình của các vòng thi thử đó. | Thay vì thi thử 1 lần dễ ăn may, thi thử qua **5 vòng (`5 Folds`)** rồi lấy điểm trung bình sẽ chọn được cấu hình thực lực mạnh nhất. |
-| **37** | **`TimeSeriesSplit`**<br>*(Chia vòng thi thử nối tiếp theo thời gian)* | Cách chia 5 vòng thi thử (`5 Folds`) dành riêng cho **Chuỗi thời gian**: Luôn lấy các khúc **Quá khứ đứng trước để học** và lấy khúc **Tương lai ngay liền sau nó để thi thử**, mở rộng dần từ 2012 đến 2017. Tuyệt đối không bao giờ lấy năm sau đi học để thi thử năm trước (khác với `K-Fold` thông thường chia đảo lộn thứ tự). | Được dùng ở Note 3 để chấm điểm 72 cấu hình XGBoost qua 5 vòng thi thử bên trong Tập Train (2012–2017). |
-| **38** | **Quan hệ Tuyến tính (`Linear`) vs Phi tuyến (`Non-linear`)** | • **Tuyến tính (`Linear`):** Quan hệ đường thẳng đơn giản kiểu $y = a \cdot x + b$ (cứ $x$ tăng 1 phần thì $y$ luôn tăng cố định bấy nhiêu phần).<br>• **Phi tuyến (`Non-linear`):** Quan hệ đường cong uốn lượn hoặc rẽ nhánh theo nhiều điều kiện phức tạp. | Giao thông là **Phi tuyến**: từ 4h sáng đến 8h sáng thì số giờ tăng làm xe tăng vọt, nhưng từ 17h chiều đến 23h đêm thì số giờ tăng lại làm xe giảm mạnh! |
-| **39** | **Mô hình mốc sàn (`Baseline` — `Seasonal Naive`)** | Là một cách dự đoán **đơn giản, thô sơ nhất không cần AI** được dựng lên làm **"vạch xuất phát"** để đo xem các thuật toán AI phức tạp vượt qua nó được bao xa. `Seasonal Naive` nghĩa là đoán theo chu kỳ một cách ngây thơ: *"Lượng xe giờ này hôm nay bằng đúng lượng xe cùng giờ này ngày hôm qua (`lag_24h`)"*. | Nếu mô hình AI bạn viết ra mà đoán còn thua cả cách lấy nguyên số xe của 24 tiếng trước thì mô hình AI đó thất bại! |
-| **40** | **`Ridge Regression` & Điều chuẩn `L2` (`alpha`)** | Là mô hình **Hồi quy tuyến tính** (tìm một phương trình cộng trừ nhân chia bậc nhất giữa 26 cột đặc trưng để tính ra số xe), nhưng được gắn thêm một **"bộ phanh kìm hãm" gọi là điều chuẩn `L2` (với lực phanh `alpha`)**: nó ép các hệ số nhân trong phương trình không được phình quá to, giúp phương trình ổn định khi các cột có thông tin trùng nhau (*đa cộng tuyến*) và tránh học vẹt. | Là mô hình cấp độ 2 trong Note 3 (`Ridge(alpha=10.0)`). |
-| **41** | **Cây quyết định**<br>*(Decision Tree)* | Một sơ đồ hỏi đáp hình cái cây gồm các câu hỏi rẽ nhánh **"Nếu... Thì..."** (ví dụ: *Nếu `lag_1h >= 4000` VÀ `is_rush_hour == 1` thì đoán `5.800` xe*). Số tầng câu hỏi từ đỉnh xuống đáy gọi là độ sâu của cây (`max_depth`). | Là viên gạch cơ bản tạo nên cả `Random Forest` lẫn `XGBoost`. |
-| **42** | **Học kết hợp (`Ensemble`): `Bagging` (`Random Forest`) vs `Boosting` (`XGBoost`)** | Kết hợp hàng trăm Cây quyết định lại với nhau theo 2 cách:<br>• **`Bagging` (`Random Forest` — Rừng ngẫu nhiên):** Trồng **50–100 cây làm việc độc lập, song song cùng lúc** (mỗi cây nhìn một phần dữ liệu ngẫu nhiên), sau đó lấy **trung bình cộng phiếu bầu** của tất cả các cây.<br>• **`Boosting` (`XGBoost` — Cây tăng cường):** Xếp **100–200 cây nối tiếp nhau thành hàng dọc**: Cây 1 đoán xong bị sai lệch bao nhiêu xe, Cây 2 nhảy vào chuyên học để **đoán bù phần sai lệch đó**, Cây 3 lại sửa tiếp phần sai còn sót lại của Cây 1+2... | Nhờ cơ chế "người sau sửa đúng chỗ sai của người trước" (`Boosting`), **`XGBoost`** đạt độ chính xác cao nhất trong cả dự án, vượt qua cả `Random Forest` (`Bagging`)! |
-
----
-
-### Nhóm D: Các từ khóa về Thước đo chấm điểm mô hình (Ở Note 3)
-
-| STT | Từ khóa trong bài | Giải thích bằng tiếng đời thường | Con số thực tế của XGBoost trong bài |
-| :---: | :--- | :--- | :--- |
-| **43** | **`MAE`**<br>*(Mean Absolute Error — Sai số tuyệt đối trung bình)* | Lấy độ lệch giữa *(Số xe thực tế − Số xe máy đoán)* ở từng giờ (bỏ dấu âm), rồi cộng trung bình lại. Nghĩa là: **"Trung bình mỗi giờ, máy tính đoán lệch bao nhiêu chiếc xe?"** *(Càng nhỏ càng giỏi)*. | `MAE = 143,49 xe` (tối ưu xong còn **`138,83 xe`**) — trong khi đoán mò Baseline lệch tới `568,37 xe`! |
-| **44** | **`RMSE`**<br>*(Root Mean Squared Error — Căn bậc hai sai số bình phương trung bình)* | Trước khi tính trung bình, nó **bình phương (nhân đôi chính nó) độ lệch của từng giờ lên**, rồi cuối cùng mới lấy căn bậc hai. Vì bình phương lên (lệch 10 bình phương là 100, nhưng lệch 1.000 bình phương là 1.000.000!), chỉ số này dùng để **phạt cực nặng những mô hình thỉnh thoảng có những cú đoán sai quá lố** *(Càng nhỏ càng giỏi)*. | `RMSE = 221,75 xe` (tối ưu xong còn **`217,64 xe`**) — thấp hơn gần 5 lần so với Baseline (`1.032,94 xe`). |
-| **45** | **`MAPE (%)`**<br>*(Mean Absolute Percentage Error — Sai số phần trăm trung bình)* | Lấy độ lệch chia cho số xe thực tế rồi nhân 100%. Nghĩa là: **"Trung bình máy đoán lệch bao nhiêu phần trăm (`%`) so với thực tế?"** *(Càng nhỏ càng giỏi)*. | `MAPE = 5,84%` (tối ưu xong chỉ còn lệch **`5,60%`**). |
-| **46** | **`R²` (`R-squared`)**<br>*(Hệ số xác định)* | Thang điểm chuẩn từ **`0` đến `1,0` (tức `0%` đến `100%`)** đo xem: **"Mô hình đã hiểu và giải thích được bao nhiêu phần trăm quy luật biến động của thực tế?"**. Đạt `1,0` là đoán trúng phóc 100% mọi giờ; bằng `0` là đoán tệ ngang với việc lúc nào cũng phán bừa một con số trung bình cộng! *(Càng gần `1,0` càng giỏi)*. | `R² = 0,9873` (tối ưu xong đạt **`0,9878`**, tức nắm bắt được **98,78%** quy luật giao thông!). |
-| **47** | **`Precision`, `Recall`, `F1`**<br>*(Bộ chỉ số chấm điểm Cảnh báo đông xe $\ge 4.926$ xe/giờ)* | Khi dùng mô hình để bật đèn báo động "Đường đang đông xe (`>= 4.926` xe/giờ)":<br>• **`Precision` (Độ chuẩn khi báo):** Trong 100 lần máy hú còi báo động, có bao nhiêu % lần là đường đông thật (không báo giả)?<br>• **`Recall` (Độ nhạy / Không bỏ sót):** Trong 100 lần đường ngoài đời thực sự đông, máy bắt trúng được bao nhiêu % lần?<br>• **`F1`:** Điểm trung bình cân bằng cả `Precision` và `Recall` (tối đa `1,0`). | XGBoost đạt `Precision = 92,94%`, `Recall = 93,27%`, và điểm tổng hợp **`F1 = 0,9310`** (tối ưu xong `F1 = 0,9334`). |
-
----
-
-### Nhóm E: Các từ khóa về Dữ liệu lớn (Big Data) & PySpark (Ở Note 4)
-
-| STT | Từ khóa trong bài | Giải thích bằng tiếng đời thường | Ý nghĩa trong cuộc đua ở Note 4 |
-| :---: | :--- | :--- | :--- |
-| **48** | **Xử lý đơn máy (`Single-node` — `pandas / scikit-learn`)** | Toàn bộ dữ liệu và việc tính toán chỉ nằm gọn trên **1 chiếc máy tính duy nhất**, và bắt buộc toàn bộ bảng dữ liệu phải nhét vừa vào bộ nhớ **RAM** của chiếc máy đó. | Nhanh gọn như **chiếc xe máy** khi dữ liệu còn nhỏ và vừa RAM, nhưng nếu dữ liệu phình to vượt quá RAM của 1 máy thì sẽ bị sập (*tràn bộ nhớ*). |
-| **49** | **Xử lý phân tán (`Distributed Computing` — `Apache Spark / PySpark MLlib`)** | Công nghệ Big Data cho phép **kết nối hàng chục/hàng trăm máy tính lại thành một cụm (`Cluster`)**, cắt bảng dữ liệu khổng lồ thành hàng trăm mảnh nhỏ để các máy cùng tính toán song song. `PySpark` là thư viện dùng ngôn ngữ Python để điều khiển `Apache Spark`, còn `MLlib` là bộ thuật toán Học máy của Spark. | Giống như **đoàn xe tải container 18 bánh**: sinh ra để chở hàng trăm GB / hàng TB dữ liệu trên nhiều máy chủ. |
-| **50** | **`local[*]` (Chế độ giả lập cụm của Spark trên 1 máy)** | Khi sinh viên làm thí nghiệm trên 1 chiếc laptop cá nhân (chưa thuê cụm 10 máy chủ), cài đặt `master("local[*]")` bảo Spark rằng: *"Hãy huy động **tất cả các luồng CPU có trên chiếc laptop này** (dấu `*` = toàn bộ 12 luồng CPU của máy) đóng giả làm các máy con để chạy song song!"*. | Giúp nhóm thực nghiệm cơ chế chia việc song song của Spark ngay trên 1 máy tính cá nhân. |
-| **51** | **`JVM` (`Java Virtual Machine` — Máy ảo Java)** | Phần lõi tính toán của Apache Spark được viết bằng ngôn ngữ Java/Scala nên chạy trong một chương trình tên là `java` (**JVM**). Khi bạn chạy code Python (`PySpark`), Python chỉ là "người chỉ huy ra lệnh", còn người thực sự ôm dữ liệu vào RAM để tính toán là tiến trình **Java (`JVM`)**! | Vì vậy ở Note 4: khi đo tốn bao nhiêu RAM của `pandas/sklearn` thì đo chương trình **Python**, còn khi đo RAM của `PySpark` thì phải đo chương trình con **Java (`JVM`)**! |
-| **52** | **`Partition` (Phân vùng dữ liệu)** | Khi đọc một file dữ liệu vào Spark, Spark tự động **cắt bảng dữ liệu thành nhiều khúc nhỏ (gọi là các `Partition`)** — ví dụ cắt thành 12 khúc để giao cho 12 luồng CPU xử lý cùng lúc. | Ở Note 4 có thông số `defaultParallelism: 12` và `so_partition` chính là số khúc dữ liệu mà Spark chia ra. |
-| **53** | **`VectorAssembler` (Bộ gom cột của Spark)** | Trong `scikit-learn`, bạn đưa thẳng bảng gồm 9 cột đặc trưng vào là máy học được ngay. Nhưng quy định của `Spark MLlib` bắt buộc phải dùng `VectorAssembler` để **gom 9 cột đặc trưng rời rạc đó thành 1 cột danh sách duy nhất tên là `"features"`** trước khi cho vào `RandomForest`. | Chính là công việc của giai đoạn **(2) Prep (Chuẩn bị dữ liệu)** trong hàm `chay_spark` ở Note 4. |
-| **54** | **`DAG` & `Lazy Evaluation` (Tính toán lười) & `.cache()` + `.count()`** | Spark có cơ chế **"Tính toán lười" (`Lazy Evaluation`)**: khi bạn gõ lệnh bảo Spark đọc file (`spark.read.parquet`) hay gom cột (`assembler.transform`), Spark **chưa hề làm thật ngay** mà mới chỉ vẽ sơ đồ kế hoạch ra giấy nháp (sơ đồ đó gọi là **`DAG`**). Chỉ khi nào gặp một lệnh bắt trả về kết quả cuối cùng (như lệnh **`.count()`** bắt đếm tổng số dòng, hoặc **`.fit()`** bắt huấn luyện), Spark mới thực sự chạy!<br>Còn **`.cache()`** là lệnh bảo Spark: *"Làm xong bước này thì ghim bảng vào RAM nhé để bước sau dùng luôn không phải đọc lại từ ổ cứng!"*. | Giải thích tại sao ở Note 4, ngay sau dòng `spark.read.parquet().cache()` và dòng `assembler.transform().cache()`, bạn làm Note 4 đều phải gọi **`.count()`** $\rightarrow$ mục đích là **ép Spark phải thực thi thật ngay lập tức** để đồng hồ bấm giờ đo đúng thời gian của riêng bước `Load` và bước `Prep`! |
-| **55** | **`Overhead` (Chi phí thủ tục cố định) vs `Scalability` (Khả năng mở rộng) & `Disk Spill` (Tràn đĩa)** | • **`Overhead`:** Thời gian và RAM tốn cho các "thủ tục hành chính" của Spark (lập bản đồ DAG, chia việc cho các luồng, chuyển dữ liệu qua lại giữa Python và Java JVM...).<br>• **`Scalability`:** Khả năng chịu tải khi dữ liệu phình to gấp hàng chục, hàng trăm lần.<br>• **`Disk Spill`:** Khi dữ liệu quá lớn làm đầy RAM, Spark tự động cất bớt dữ liệu tạm xuống ổ cứng để chạy tiếp chứ không bị sập chương trình như `pandas`! | Trên 1 máy với dữ liệu nhỏ/vừa (`x1` đến `x60`), Spark chạy **chậm hơn** `pandas/sklearn` vì gánh nặng thủ tục **`Overhead`**; nhưng khi dữ liệu tăng 60 lần, thời gian của Spark tăng chậm hơn rất nhiều (**`Scalability`** tốt hơn) và xử lý được dữ liệu vượt quá RAM nhờ **`Disk Spill`** và nối nhiều máy chủ! |
-
----
-
-## PHẦN 2: BỨC TRANH LỚN — THỰC SỰ NHÓM MÌNH ĐANG LÀM CÁI GÌ VÀ ĐỂ LÀM GÌ?
-
-*(Bây giờ bạn đã biết hết các từ khóa ở Phần 1 rồi, hãy ghép chúng lại thành câu chuyện hoàn chỉnh của cả nhóm!)*
-
-### 2.1. Bài toán thực tế ngoài đời là gì?
-Trên tuyến đường cao tốc liên bang **I-94** ở bang Minnesota (Mỹ), Sở Giao thông đặt một trạm cảm biến đếm xem **mỗi giờ có bao nhiêu chiếc xe ô tô chạy qua** (**biến mục tiêu / đáp án $y$**: `traffic_volume`), đồng thời ghi lại **thời gian** và **thời tiết** của giờ đó suốt 6 năm (2012–2018).
-
-**Mục đích cuối cùng của dự án:** Xây dựng một **mô hình Học máy (Machine Learning)** học từ dữ liệu 6 năm qua để giải **bài toán Hồi quy (Regression — đoán một con số)**:
-> *"Vào một giờ sắp tới trong tương lai, với thời tiết và ngày giờ như thế này, sẽ có khoảng bao nhiêu chiếc xe đi qua cao tốc?"*
-
-Trong thực tế điều hành giao thông, Sở Giao thông có **2 kịch bản sử dụng khác nhau** (đây chính là lý do nhóm bạn tạo ra **Bộ đặc trưng A** và **Bộ đặc trưng B** ở Note 2):
-1. **Kịch bản 1 — Lập kế hoạch dài hạn trước nhiều ngày/tuần (Dùng Bộ đặc trưng A = 23 cột đầu vào):**
-   * Khi dự báo cho một giờ của tuần sau (hoặc khi người dùng nhập thử trên phần mềm **Demo**), ta **chỉ biết trước Lịch (giờ, thứ, tháng, có lễ không) và Dự báo thời tiết**, chứ chưa thể có số đo xe của 1 tiếng ngay trước giờ đó.
-   * $\rightarrow$ Dùng **Bộ A (23 đặc trưng: gồm 8 cột Lịch + 15 cột Thời tiết)**.
-2. **Kịch bản 2 — Cảnh báo ùn tắc thời gian thực trước 1 giờ trên đường cao tốc (Dùng Bộ đặc trưng B = 26 cột đầu vào):**
-   * Khi hệ thống gắn trực tiếp với trạm cảm biến đếm xe liên tục trên đường: đang ở `07:00` sáng muốn đoán ngay `08:00` sáng, ta biết thêm **số xe vừa đo được lúc 7h sáng (`lag_1h`), số xe lúc 8h sáng hôm qua (`lag_24h`) và trung bình số xe của 3 tiếng vừa qua (`roll_3h`)**.
-   * $\rightarrow$ Dùng **Bộ B (26 đặc trưng = 23 cột Bộ A + 3 cột đặc trưng trễ quá khứ)**.
-
-### 2.2. Tại sao nhóm lại chia thành 4 Notebook? (Sự kết nối giữa 4 thành viên)
-
-```mermaid
-flowchart LR
-    N1["NOTEBOOK 01<br/>Khám phá dữ liệu (EDA)"] -->|"Tìm ra 5 lỗi dữ liệu<br/>& 4 quy luật giao thông"| N2["NOTEBOOK 02<br/>Làm sạch & Tạo đặc trưng"]
-    N2 -->|"Xuất clean_data.parquet<br/>(34.833 dòng x 30 cột)"| N3["NOTEBOOK 03<br/>Huấn luyện 4 mô hình & Chấm điểm"]
-    N2 -->|"Xuất clean_data.parquet"| N4["NOTEBOOK 04<br/>Thực nghiệm Big Data<br/>(PySpark vs Scikit-learn)"]
-```
-
-1. **[note_01.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_01.ipynb) (Khâu 1 — Khám phá dữ liệu `EDA`):** Mở file gốc (`48.204` dòng × `9` cột) ra kiểm tra xem dữ liệu bị hỏng/bẩn ở đâu và vẽ 4 biểu đồ để phát hiện quy luật giao thông (như ngày thường có 2 khung giờ cao điểm đi làm 7–9h và tan tầm 16–18h, trong khi cuối tuần và ngày lễ thì vắng).
-2. **[note_02.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_02.ipynb) (Khâu 2 — Làm sạch & Tạo đặc trưng — Phần của bạn):** Dựa trên phát hiện của Note 1, thực hiện **6 bước làm sạch** (xử lý ngày lễ, xóa trùng giờ, đổi Kelvin sang độ C, xóa 11 dòng ngoại lai hỏng cảm biến, trải lên lưới giờ liên tục `reindex` rồi tính biến trễ và bỏ dòng khuyết) $\rightarrow$ thu được **`34.833` dòng sạch**. Đồng thời chế biến ra **Bộ A (23 đặc trưng)** và **Bộ B (26 đặc trưng)**, xuất ra file [clean_data.parquet](file:///d:/big%20data/btl_nhóm_3/data/processed/clean_data.parquet) (`34.833 dòng × 30 cột`) và [clean_data.json](file:///d:/big%20data/btl_nhóm_3/data/processed/clean_data.json).
-3. **[note_03.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_03.ipynb) (Khâu 3 — Mô hình hóa & Đánh giá):** Lấy file sạch từ Note 2, cắt Tập `Train` (`< 2018-01-01`) và Tập `Test` (`>= 2018-01-01`), dùng `TimeSeriesSplit (5 vòng thi thử)` bên trong tập Train để tinh chỉnh siêu tham số, cho **4 mô hình** (*Baseline Seasonal Naive, Ridge Regression, Random Forest, XGBoost*) thi đấu với nhau, chấm điểm (`MAE, RMSE, MAPE, R², Precision, Recall, F1`), phân tích xem mô hình hay sai ở giờ nào/thời tiết nào và lưu lại mô hình vô địch (`XGBoost`).
-4. **[note_04.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_04.ipynb) (Khâu 4 — Thực nghiệm Big Data):** Lấy file sạch từ Note 2 nhân bản lên **x1, x10, x30, x60 (2,09 triệu dòng)**, cho cùng một thuật toán `RandomForest (50 cây, độ sâu 10)` chạy trên cả công cụ đơn máy (`pandas/scikit-learn`) và công cụ phân tán (`PySpark MLlib`) để đo thời gian và bộ nhớ RAM, từ đó rút ra kết luận khi nào nên dùng công cụ đơn máy và khi nào bắt buộc phải dùng Big Data Spark.
-
----
-
-## PHẦN 3: GIẢI PHẪU TỪNG TÍ MỘT VỀ BỘ DỮ LIỆU — TỪ 9 CỘT GỐC ĐẺ RA 23 ĐẶC TRƯNG (BỘ A), 26 ĐẶC TRƯNG (BỘ B) VÀ 30 CỘT PARQUET NHƯ THẾ NÀO?
-
-### 3.1. Giải phẫu 9 cột trong file CSV gốc (`48.204 dòng × 9 cột`)
-Một dòng dữ liệu thật trong file gốc [metro_interstate_traffic_volume.csv](file:///d:/big%20data/btl_nhóm_3/data/raw/metro_interstate_traffic_volume.csv) trông như sau:
-> `holiday = "None"`, `temp = 291.15`, `rain_1h = 0.0`, `snow_1h = 0.0`, `clouds_all = 40`, `weather_main = "Clouds"`, `weather_description = "scattered clouds"`, `date_time = "2012-10-03 16:00:00"`, `traffic_volume = 6137`
-
-| STT | Tên cột gốc | Nó là cái gì & Kiểu dữ liệu? | Vấn đề của cột gốc này là gì? | Số phận của cột này ở Note 2 (Đi đâu về đâu?) |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | **`traffic_volume`** | **Số lượng xe ô tô** qua trạm trong 1 giờ *(Biến định lượng số nguyên: `0` đến `7.280` xe/giờ)*. | Không có lỗi cảm biến. | 🎯 **Là ĐÁP ÁN CẦN DỰ BÁO ($y$)**. Đồng thời dùng giá trị của nó ở các giờ trước để đẻ ra **3 đặc trưng Trễ** (`lag_1h`, `lag_24h`, `roll_3h`). |
-| **2** | **`date_time`** | **Mốc ngày giờ** ghi nhận *(Dạng chuỗi chữ `"YYYY-MM-DD HH:MM:SS"`)*. | Bị trùng mốc giờ `7.629` dòng; mất tín hiệu `11.987` giờ; máy tính không cộng trừ trực tiếp trên chuỗi chữ được. | 🔨 **Tách ra 7 đặc trưng Lịch & Chu kỳ** (`hour`, `day_of_week`, `month`, `is_weekend`, `is_rush_hour`, `hour_sin`, `hour_cos`). |
-| **3** | **`holiday`** | **Tên ngày nghỉ lễ** của Mỹ *(Biến phân loại dạng chữ: 11 loại lễ; ngày thường ghi `'None'`)*. | Phần mềm đọc chữ `'None'` thành ô trống `NaN` (`48.143` dòng). Đặc biệt: **chỉ có 61 dòng lúc `00:00:00` nửa đêm được gắn tên lễ**, còn từ `01:00` đến `23:00` cùng ngày lễ đó lại bị ghi là `'None'`! | 🔨 Kết hợp với `date_time` tìm ra **53 ngày lễ**, rồi đẻ ra **1 đặc trưng nhị phân `is_holiday` (`0` hoặc `1`)** đánh dấu cho cả 24 giờ của ngày lễ. |
-| **4** | **`temp`** | **Nhiệt độ không khí** đo theo **độ Kelvin (K)** *(Biến định lượng số thực)*. | Đơn vị Kelvin khó đọc; có **10 dòng lỗi cảm biến ghi `0 K`** (`-273,15°C`). | 🔄 Trừ đi `273,15` để biến thành **1 đặc trưng mới `temp_c` (độ C)**, lọc bỏ 10 dòng lỗi `0 K`, rồi **bỏ cột `temp` Kelvin cũ**. |
-| **5** | **`rain_1h`** | **Lượng mưa trong 1 giờ** tính bằng `mm` *(Biến định lượng số thực)*. | Có **1 dòng lỗi cảm biến ghi `9.831,3 mm/giờ`** (gần 10 mét nước mưa trong 1 tiếng!). | ✅ Xóa 1 dòng lỗi `9.831,3 mm`, **giữ nguyên làm 1 đặc trưng Thời tiết (`rain_1h`)**. |
-| **6** | **`snow_1h`** | **Lượng tuyết rơi trong 1 giờ** tính bằng `mm` *(Biến định lượng số thực: `0` đến `0,51 mm`)*. | Không có lỗi. | ✅ **Giữ nguyên làm 1 đặc trưng Thời tiết (`snow_1h`)**. |
-| **7** | **`clouds_all`** | **Độ phủ mây trên bầu trời** tính bằng `%` *(Biến định lượng số nguyên: `0%` đến `100%`)*. | Không có lỗi. | ✅ **Giữ nguyên làm 1 đặc trưng Thời tiết (`clouds_all`)**. |
-| **8** | **`weather_main`** | **Nhóm thời tiết chính** *(Biến phân loại dạng chữ, gồm đúng **11 loại** khác nhau: Clear, Clouds, Rain, Snow...)*. | Là **chữ** và không có thứ tự lớn bé — công thức toán học không nhân chia chữ `"Rain"` được! | 🔨 Dùng **One-Hot Encoding** tách 1 cột chữ này thành **11 cột số nhị phân (`0` hoặc `1`)** từ `wm_Clear` đến `wm_Thunderstorm`! |
-| **9** | **`weather_description`** | **Mô tả thời tiết chi tiết** *(Biến phân loại dạng chữ, gồm **38 nhãn** nhỏ như light rain, broken clouds...)*. | Chỉ là bản chia vụn của `weather_main`. Nếu giữ lại sẽ gây trùng lặp thông tin (*đa cộng tuyến*) và đẻ thêm 38 cột thưa làm rối mô hình. | ❌ **LOẠI BỎ HOÀN TOÀN** không đưa vào mô hình! |
-
----
-
-### 3.2. Sơ đồ "Cây Gia Phả": Phép cộng ra đúng 23 đặc trưng (Bộ A) và 26 đặc trưng (Bộ B)
-
-```mermaid
-flowchart TD
-    RAW["9 CỘT GỐC TRONG FILE CSV"] --> G1["Cột date_time + Cột holiday<br/>(2 cột gốc)"]
-    RAW --> G2A["Cột temp, rain_1h, snow_1h, clouds_all<br/>(4 cột số gốc)"]
-    RAW --> G2B["Cột chữ weather_main<br/>(1 cột chữ gồm 11 loại thời tiết)"]
-    RAW --> DROP["Cột weather_description<br/>(BỊ LOẠI BỎ)"]
-    RAW --> Y["Cột traffic_volume<br/>(LÀ ĐÁP ÁN CẦN DỰ BÁO y)"]
-
-    G1 -->|"Tách ngày giờ & công thức"| N1["NHÓM 1: LỊCH & CHU KỲ<br/>= 8 ĐẶC TRƯNG<br/>(Số 1 -> Số 8)"]
-    G2A -->|"Đổi temp -> temp_c"| W1["4 đặc trưng thời tiết dạng số<br/>(Số 9 -> Số 12)"]
-    G2B -->|"One-Hot Encoding (tách 11 loại)"| W2["11 đặc trưng thời tiết dạng 0/1<br/>(Số 13 -> Số 23)"]
-
-    W1 --> N2["NHÓM 2: THỜI TIẾT<br/>= 4 + 11 = 15 ĐẶC TRƯNG"]
-    W2 --> N2
-
-    N1 --> SETA["BỘ ĐẶC TRƯNG A = 8 + 15 = 23 ĐẶC TRƯNG<br/>(Chỉ gồm Lịch & Thời tiết - Dự báo dài hạn & Demo)"]
-    N2 --> SETA
-
-    Y -->|"Lấy giá trị ở các giờ quá khứ<br/>trên lưới giờ liên tục"| N3["NHÓM 3: ĐẶC TRƯNG TRỄ (LAG)<br/>= 3 ĐẶC TRƯNG<br/>(Số 24 -> Số 26)"]
-
-    SETA --> SETB["BỘ ĐẶC TRƯNG B = 23 + 3 = 26 ĐẶC TRƯNG<br/>(Lịch + Thời tiết + Lịch sử xe quá khứ - Dự báo 1h tới)"]
-    N3 --> SETB
-```
-
----
-
-### 3.3. Giải thích chi tiết TỪNG ĐẶC TRƯNG MỘT (Từ số 1 đến số 26: Lấy từ đâu? Lấy thế nào? Ý nghĩa là gì?)
-
-#### 🟢 NHÓM 1: NHÓM LỊCH & CHU KỲ (`CALENDAR_FEATURES` — 8 đặc trưng, từ số 1 đến số 8)
-| Số | Tên đặc trưng | Lấy từ đâu & Làm thế nào để lấy? | Giá trị nhận được | Tại sao cần tạo ra đặc trưng này? |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | **`hour`** | Cắt lấy phần **Giờ** từ cột `date_time` (ví dụ `"2012-10-03 16:00:00"` $\rightarrow$ lấy số `16`). | Số nguyên từ `0` đến `23` | Giờ trong ngày ảnh hưởng mạnh nhất đến lượng xe (ban ngày đông gấp 10 lần ban đêm). |
-| **2** | **`day_of_week`** | Dùng lịch của Python đổi phần Ngày trong `date_time` ra **Thứ trong tuần**. | Số nguyên từ `0` (Thứ Hai) đến `6` (Chủ Nhật) | Giúp máy phân biệt ngày đi làm trong tuần với ngày cuối tuần. |
-| **3** | **`month`** | Cắt lấy phần **Tháng** từ cột `date_time` (`"2012-10-03"` $\rightarrow$ lấy số `10`). | Số nguyên từ `1` đến `12` | Phản ánh mùa vụ trong năm (mùa hè tháng 6–8 đông xe hơn mùa đông tuyết tháng 1–2). |
-| **4** | **`is_weekend`** | Nhìn vào cột `day_of_week` vừa tạo: nếu là `5` (Thứ Bảy) hoặc `6` (Chủ Nhật) thì điền số `1`, còn từ Thứ Hai đến Thứ Sáu thì điền số `0`. | Biến nhị phân `0` hoặc `1` | Cuối tuần không có dòng người đi làm sáng/chiều nên lượng xe thấp hơn hẳn ngày thường. |
-| **5** | **`is_holiday`** | Kiểm tra xem phần Ngày của `date_time` có trùng với **53 ngày lễ** đã trích từ cột `holiday` ở đầu Note 2 không: nếu trùng thì điền số `1` cho **toàn bộ 24 giờ** của ngày đó, ngược lại điền `0`. | Biến nhị phân `0` hoặc `1` | Sửa lỗi file gốc chỉ gắn tên lễ lúc 0h đêm; vào ngày lễ người dân nghỉ làm nên đường rất vắng. |
-| **6** | **`is_rush_hour`** | **Đặc trưng tương tác (kết hợp 3 điều kiện):** Điền số `1` khi **(`hour` từ `7–9h` sáng hoặc `16–18h` chiều) VÀ (`is_weekend == 0`) VÀ (`is_holiday == 0`)**; các giờ khác điền `0`. | Biến nhị phân `0` hoặc `1` | Báo thẳng cho máy biết *"Đang là giờ cao điểm đi làm/tan tầm của ngày làm việc bình thường!"* (có hệ số tương quan `+0,53` với số xe). |
-| **7** | **`hour_sin`** | Thay số `hour` vào công thức lượng giác $\sin(2\pi \times \text{hour} / 24)$. | Số thực từ `-1,0` đến `+1,0` | Cùng với `hour_cos` cuộn dãy số `0..23` thành **một vòng tròn mặt đồng hồ**, giúp máy tính hiểu `23h` đêm và `0h` sáng nằm sát ngay cạnh nhau chứ không phải cách xa 23 đơn vị. |
-| **8** | **`hour_cos`** | Thay số `hour` vào công thức lượng giác $\cos(2\pi \times \text{hour} / 24)$. | Số thực từ `-1,0` đến `+1,0` | Đạt `+1` lúc 0h đêm (xe vắng nhất) và `-1` lúc 12h trưa (xe đông), khớp hoàn hảo với nhịp ngày – đêm (tương quan âm `-0,77` với số xe!). |
-
-#### 🔵 NHÓM 2: NHÓM THỜI TIẾT (`WEATHER_FEATURES` — 15 đặc trưng = 4 cột số + 11 cột One-Hot `0/1`, từ số 9 đến số 23)
-| Số | Tên đặc trưng | Lấy từ đâu & Làm thế nào để lấy? | Giá trị nhận được | Ý nghĩa tiếng Việt |
-| :---: | :--- | :--- | :--- | :--- |
-| **9** | **`temp_c`** | Lấy cột `temp` (độ Kelvin) trừ đi `273,15` và đã xóa 10 dòng lỗi `0 K`. | `-29,76` đến `36,92°C` | Nhiệt độ không khí tính bằng độ C. |
-| **10** | **`rain_1h`** | Giữ từ cột `rain_1h` gốc sau khi đã xóa 1 dòng lỗi `9.831,3 mm`. | `0,00` đến `55,63 mm` | Lượng mưa rơi trong 1 giờ. |
-| **11** | **`snow_1h`** | Giữ nguyên từ cột `snow_1h` gốc. | `0,00` đến `0,51 mm` | Lượng tuyết rơi trong 1 giờ. |
-| **12** | **`clouds_all`** | Giữ nguyên từ cột `clouds_all` gốc. | `0` đến `100` (%) | Phần trăm bầu trời có mây che phủ. |
-| **13** | **`wm_Clear`** | Tách **One-Hot Encoding** từ cột chữ `weather_main`: bằng `1` nếu giờ đó là `"Clear"`, bằng `0` nếu là thời tiết khác. | Biến nhị phân `0` hoặc `1` | Trời quang đãng, không mây. |
-| **14** | **`wm_Clouds`** | Bằng `1` nếu `weather_main == "Clouds"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Trời nhiều mây. |
-| **15** | **`wm_Drizzle`** | Bằng `1` nếu `weather_main == "Drizzle"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Trời mưa phùn nhỏ. |
-| **16** | **`wm_Fog`** | Bằng `1` nếu `weather_main == "Fog"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Sương mù dày đặc. |
-| **17** | **`wm_Haze`** | Bằng `1` nếu `weather_main == "Haze"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Sương mù khô / mù bụi nhẹ. |
-| **18** | **`wm_Mist`** | Bằng `1` nếu `weather_main == "Mist"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Sương mù ẩm nhẹ. |
-| **19** | **`wm_Rain`** | Bằng `1` nếu `weather_main == "Rain"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Trời mưa vừa đến mưa to. |
-| **20** | **`wm_Smoke`** | Bằng `1` nếu `weather_main == "Smoke"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Trời có khói mù. |
-| **21** | **`wm_Snow`** | Bằng `1` nếu `weather_main == "Snow"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Trời có tuyết rơi. |
-| **22** | **`wm_Squall`** | Bằng `1` nếu `weather_main == "Squall"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Gió giật mạnh / mưa bão ngắn. |
-| **23** | **`wm_Thunderstorm`** | Bằng `1` nếu `weather_main == "Thunderstorm"`, ngược lại bằng `0`. | Biến nhị phân `0` hoặc `1` | Mưa giông có sấm sét. |
-
-> 👉 **CHỐT BỘ ĐẶC TRƯNG A (`FEATURES_A`) = Đặc trưng số 1 đến số 23 (`8 cột Lịch + 15 cột Thời tiết = 23 đặc trưng`).**
-
-#### 🟠 NHÓM 3: NHÓM ĐẶC TRƯNG TRỄ (`LAG_FEATURES` — 3 đặc trưng, từ số 24 đến số 26)
-| Số | Tên đặc trưng | Lấy từ đâu & Làm thế nào để tính? | Giá trị nhận được | Tại sao cần tạo ra đặc trưng này? |
-| :---: | :--- | :--- | :--- | :--- |
-| **24** | **`lag_1h`** | Sau khi trải bảng lên lưới giờ liên tục (`reindex`), lấy giá trị `traffic_volume` của **đúng 1 giờ đồng hồ ngay trước đó** (`.shift(1)`). | `0` đến `7.280` xe | Bắt quán tính tức thời của dòng xe: 1 tiếng trước đang kẹt xe thì tiếng này cũng rất đông (tương quan cao nhất `+0,91`). |
-| **25** | **`lag_24h`** | Lấy giá trị `traffic_volume` của **đúng 24 giờ đồng hồ trước đó** (`.shift(24)` — tức cùng giờ này ngày hôm qua). | `0` đến `7.280` xe | Bắt quy luật lặp lại theo chu kỳ ngày: 8h sáng hôm nay rất giống 8h sáng hôm qua (tương quan `+0,86`). |
-| **26** | **`roll_3h`** | Lấy **trung bình cộng `traffic_volume` của 3 giờ liên tiếp ngay trước giờ cần dự báo** (`.shift(1).rolling(3).mean()`). *(Luôn lùi 1 giờ bằng `.shift(1)` trước để không lấy nhầm đáp án của chính giờ đang cần đoán!)*. | `0` đến `7.280` xe | Bắt xu hướng tăng/giảm của dòng xe trong 3 tiếng gần nhất (tương quan `+0,76`). |
-
-> 👉 **CHỐT BỘ ĐẶC TRƯNG B (`FEATURES_B`) = Đặc trưng số 1 đến số 26 (`23 đặc trưng Bộ A + 3 đặc trưng Trễ = 26 đặc trưng`).**  
-> 👉 **Tại sao file `clean_data.parquet` có 30 cột?** Vì gồm: `26 cột đặc trưng Bộ B` + `1 cột đáp án (traffic_volume)` + `1 cột ngày giờ (date_time)` + `2 cột chữ gốc giữ lại để vẽ biểu đồ phân tích lỗi ở Note 3 (weather_main, holiday)` = **`30 cột`**!
-
----
-
-## PHẦN 4: HIỂU SÂU CÁC THUẬT TOÁN HỌC MÁY — TẠI SAO NÊN DÙNG CÁI NÀY MÀ KHÔNG NÊN DÙNG CÁI KIA?
-
-### 4.1. Hình dung trực quan: "Cây quyết định", "Random Forest" và "XGBoost" hoạt động như thế nào?
-Cả hai thuật toán mạnh nhất bài là `Random Forest` và `XGBoost` đều được ghép lại từ các **Cây quyết định (Decision Tree)**.
-
-#### 1. Một Cây quyết định (Decision Tree) đoán số xe bằng cách nào?
-Nó đặt liên tiếp các câu hỏi **"Nếu... Thì..." (Đúng / Sai)** để chia trường hợp, giống hệt cách con người suy luận:
-```
-                     [Câu hỏi tầng 1: 1 tiếng trước (lag_1h) có từ 4.000 xe trở lên không?]
-                              /                                           \
-                         CÓ (Đúng)                                     KHÔNG (Sai)
-                            /                                               \
-        [Câu hỏi tầng 2: Có phải giờ cao điểm không?]          [Câu hỏi tầng 2: Có phải ban đêm (0h-5h) không?]
-                 /                   \                                     /                     \
-               CÓ                   KHÔNG                                CÓ                    KHÔNG
-              /                       \                                   /                       \
-     👉 Đoán: 5.800 xe         👉 Đoán: 4.300 xe                 👉 Đoán: 450 xe          👉 Đoán: 2.400 xe
-```
-* Số tầng câu hỏi từ trên xuống dưới gọi là **Độ sâu của cây (`max_depth`)**. Nếu cho cây hỏi quá nhiều tầng (ví dụ 30 tầng), cây sẽ nhớ vẹt từng dòng dữ liệu cũ (**Quá khớp / Overfitting**). Vì vậy nhóm chỉ giới hạn độ sâu `max_depth` từ `4` đến `10` tầng.
-
-#### 2. Sự khác nhau cốt lõi giữa `Random Forest` (Bagging) và `XGBoost` (Boosting)
-* **`Random Forest` (Trường phái "Hội đồng bỏ phiếu độc lập" — `Bagging`):**
-  * Trồng **50 cây quyết định cùng một lúc (song song, không cây nào biết cây nào)**. Mỗi cây chỉ được học trên một phần dữ liệu bốc ngẫu nhiên và nhìn vài cột ngẫu nhiên.
-  * Khi đoán số xe: Cả 50 cây cùng tự đoán theo ý mình, rồi lấy **trung bình cộng kết quả của 50 cây**.
-* **`XGBoost` (Trường phái "Đội chạy tiếp sức sửa sai nối tiếp" — `Boosting`):**
-  * Trồng **100 đến 300 cây nối tiếp nhau theo hàng dọc** (cây trước làm xong mới tới cây sau):
-    * **Cây số 1** đoán thử trước: ví dụ thực tế có `5.000` xe, Cây 1 đoán `4.200` xe $\rightarrow$ bị thiếu **`+800` xe (phần sai số)**.
-    * **Cây số 2** nhảy vào chỉ chuyên học cách đoán đúng **phần sai số `+800` xe mà Cây 1 vừa đoán trật**! Giả sử Cây 2 bù thêm được `+650` xe $\rightarrow$ tổng 2 cây là `4.200 + 650 = 4.850` xe (chỉ còn lệch `+150` xe).
-    * **Cây số 3** lại nhảy vào học cách sửa nốt phần lệch `+150` xe đó... Cứ thế 200 cây nối đuôi nhau gọt dần sai số về mức nhỏ nhất!
-
----
-
-### 4.2. Bảng quyết định: TẠI SAO NÊN DÙNG 4 thuật toán trong bài, và TẠI SAO KHÔNG NÊN DÙNG các thuật toán khác?
-
-#### A. Tại sao NÊN DÙNG 4 mô hình đã chọn trong Note 3?
-
-| Mô hình đã dùng | Tại sao NÊN DÙNG trong dự án này? | Kết quả thực tế trên Tập Test (Năm 2018) |
+| Nhóm | Từ khóa | Giải thích 1 câu bằng tiếng đời thường |
 | :--- | :--- | :--- |
-| **1. Baseline (Seasonal Naive)**<br>*(Lấy nguyên số xe 24h trước làm dự báo cho hôm nay)* | **Bắt buộc phải có để làm mốc chuẩn sàn (Vạch xuất phát):** Giúp chứng minh rằng việc xây dựng các mô hình Học máy phức tạp phía sau thực sự có tác dụng lớn (giảm sai số từ 568 xe xuống còn 143 xe). | Sai số `MAE = 568,37 xe`<br>`RMSE = 1.032,94 xe`<br>Hiểu quy luật `R² = 72,51%` |
-| **2. Ridge Regression**<br>*(Phương trình cộng trừ tuyến tính có phanh kìm hãm L2)* | **Đại diện cho nhóm mô hình Tuyến tính (đường thẳng):** Chạy cực nhanh (chưa tới 0,1 giây), có bộ phanh `L2 (alpha=10)` nên không bị lỗi nổ hệ số khi các cột trùng thông tin (*đa cộng tuyến*). | Sai số `MAE = 353,61 xe`<br>`RMSE = 475,92 xe`<br>Hiểu quy luật `R² = 94,16%` |
-| **3. Random Forest**<br>*(Rừng 50 cây quyết định bỏ phiếu song song — Bagging)* | **Đại diện cho nhóm Cây quyết định song song:** Bắt được các quy luật rẽ nhánh phức tạp (*phi tuyến*) giữa Thứ × Giờ × Thời tiết; đồng thời có mặt ở cả hai thư viện `scikit-learn` và `PySpark MLlib` để đem sang Note 4 đọ tốc độ Big Data một cách công bằng. | Sai số `MAE = 213,64 xe`<br>`RMSE = 305,45 xe`<br>Hiểu quy luật `R² = 97,60%` |
-| **4. XGBoost**<br>*(Đội cây quyết định nối tiếp nhau sửa sai — Boosting)* | **Thuật toán mạnh nhất hiện nay cho dữ liệu dạng bảng:** Nhờ cơ chế cây sau sửa trực tiếp lỗi sai của cây trước, XGBoost đạt độ chính xác vô địch trong bài toán này. | **Sai số `MAE = 143,49 xe`** *(Tối ưu xong còn **`138,83 xe`**)*<br>**`RMSE = 221,75 xe`**<br>**Hiểu quy luật `R² = 98,73%` (`98,78%`)** |
+| **Dữ liệu & Thống kê** | **Bản ghi (`Row` / `Sample`)** | 1 dòng ngang trong bảng (tương ứng với **1 giờ đồng hồ** trên cao tốc). |
+| | **Thuộc tính (`Column`)** | 1 cột dọc trong bảng. Chia làm **Đặc trưng đầu vào ($X$)** (dữ kiện đề bài) và **Biến mục tiêu ($y$)** (đáp án cần đoán: `traffic_volume`). |
+| | **Biến định lượng vs Phân loại vs Nhị phân** | *Định lượng* là con số đo đếm được (`15,2°C`, `5.000` xe); *Phân loại* là chữ chia nhóm (`"Rain"`, `"Snow"`); *Nhị phân* là cột chỉ có `0` (Sai) hoặc `1` (Đúng). |
+| | **Giá trị khuyết (`NaN` / `Null` / `Missing`)** | Ô bị bỏ trống không có dữ liệu (do mất điện, quên ghi, hoặc phần mềm đọc nhầm chữ `'None'`). |
+| | **Ngoại lai (`Outlier`)** | Con số vọt ra quá xa khỏi đám đông (có thể do **hỏng máy đo** $\rightarrow$ phải xóa, hoặc **giờ cao điểm thật** $\rightarrow$ cấm xóa). |
+| | **Trung bình (`Mean`), Trung vị (`Median`/`50%`), Tứ phân vị (`25%`, `75%`), `IQR`** | Xếp dữ liệu từ nhỏ đến lớn: chỗ 1/4 hàng là `25%`, chính giữa hàng là `Trung vị (50%)`, chỗ 3/4 hàng là `75%`. Khoảng từ 25% đến 75% gọi là `IQR`. |
+| | **Độ lệch chuẩn (`Std`)** | Đo mức độ "nhảy múa thất thường" quanh số trung bình (`Std` nhỏ = đều đặn; `Std` lớn = biến động dữ dội). |
+| | **Hệ số tương quan (`Pearson r`)** | Con số từ `-1` đến `+1`: gần `+1` là 2 cột cùng tăng; gần `-1` là cột này tăng cột kia giảm; gần `0` là không có quan hệ đường thẳng. |
+| | **Đa cộng tuyến (`Multicollinearity`)** | Hiện tượng nhiều cột đầu vào bị trùng lặp ý nghĩa với nhau, làm phương trình cộng trừ bị rối và nổ hệ số. |
+| **Xử lý & Đặc trưng** | **`EDA` (Khám phá dữ liệu)** | Bước "chụp X-quang / xét nghiệm" dữ liệu thô bằng bảng đếm và biểu đồ để tìm bệnh và tìm quy luật *trước khi* sửa dữ liệu. |
+| | **Chuỗi thời gian (`Time Series`)** | Dữ liệu đo nối tiếp theo từng nấc đồng hồ. Luật bất di bất dịch: **cấm xáo trộn thứ tự, cấm lấy tương lai đoán quá khứ (`Data Leakage` — rò rỉ dữ liệu)**. |
+| | **`Reindex` vs Nội suy (`Interpolation`)** | `Reindex` là trải bảng lên khung lịch đủ từng giờ để lộ các giờ mất điện thành `NaN`. *Nội suy* là tự bịa con số giả điền vào ô `NaN`. |
+| | **`One-Hot` vs `Label Encoding`** | `One-Hot` tách 1 cột chữ (11 loại thời tiết) thành 11 cột `0/1` bình đẳng; `Label Encoding` gán số đếm `1, 2, 3...` lên 1 cột. |
+| | **Đặc trưng trễ (`Lag`) & Trung bình trượt (`Rolling`)** | `Lag` là kéo cột số xe tụt xuống $k$ dòng để lấy số xe quá khứ ($k$ giờ trước); `Rolling` là lấy trung bình cộng của 3 dòng ngay phía trên. |
+| **Mô hình & Big Data** | **Hồi quy (`Regression`) vs Phân loại (`Classification`)** | *Hồi quy* là đoán một **con số** (bao nhiêu xe); *Phân loại* là đoán **nhãn nhóm** (Có đông nghẹt / Không đông nghẹt). |
+| | **`Train` / `Test` / `Overfitting` / `Underfitting`** | `Train` là sách ôn ở nhà; `Test` là đề thi thật cuối kỳ. Nhớ vẹt sách ôn mà thi thật trượt là `Overfitting`; học mãi không hiểu bài là `Underfitting`. |
+| | **Siêu tham số (`Hyperparameters`) & `TimeSeriesSplit`** | *Siêu tham số* là các nút vặn cài đặt cho mô hình. `TimeSeriesSplit` là chia tập `Train` thành 4 vòng thi thử nối tiếp từ quá khứ đến tương lai để chọn nút vặn tốt nhất. |
+| | **`Bagging` (`Random Forest`) vs `Boosting` (`XGBoost`)** | `Random Forest` cho 100 cây làm độc lập song song rồi lấy trung bình; `XGBoost` xếp 300 cây nối đuôi nhau, cây sau chuyên sửa phần sai số của cây trước. |
+| | **`PySpark` / `JVM` / `DAG` / `Lazy Evaluation` / `Overhead`** | `PySpark` là công cụ Big Data phân tán chạy trên Máy ảo Java (`JVM`), lập bản đồ kế hoạch (`DAG`) đợi lệnh `.count()`/`.fit()` mới chạy thật (`Lazy Evaluation`), chịu chi phí thủ tục ban đầu (`Overhead`) nhưng mở rộng được ra nhiều máy (`Scalability`). |
 
 ---
 
-#### B. Tại sao KHÔNG NÊN DÙNG các thuật toán khác cho bài toán này? (Rất hay hỏi khi vấn đáp!)
+# BƯỚC 1: THU THẬP & HIỂU RÕ BỘ DỮ LIỆU GỐC LÀ GÌ? (`Đầu Note 01`)
 
-| Thuật toán KHÔNG dùng | Nó là thuật toán gì? | Tại sao KHÔNG NÊN DÙNG cho bài toán của nhóm mình? |
-| :--- | :--- | :--- |
-| ❌ **Hồi quy tuyến tính thường (`LinearRegression` không có phanh L2)** | Phương trình đường thẳng cộng trừ bình thường, không có bộ kìm hãm hệ số. | Trong 26 cột của nhóm có hiện tượng **trùng lặp thông tin (đa cộng tuyến)**: ví dụ tổng 11 cột thời tiết `wm_*` cộng lại luôn bằng `1`, hoặc `lag_1h` và `roll_3h` rất giống nhau. Dùng `LinearRegression` thường sẽ bị **nổ hệ số** (hệ số phình lên hàng triệu âm/dương lệch nhau), nên bắt buộc phải dùng **`Ridge`** (có phanh kìm hãm L2) thay thế! |
-| ❌ **KNN (`K-Nearest Neighbors`) hoặc SVM (`SVR`)** | Đo khoảng cách hình học giữa từng dòng dữ liệu mới với tất cả các dòng dữ liệu cũ để tìm dòng giống nhất. | **Chạy quá chậm và tốn RAM trên dữ liệu lớn:** Với `34.833` dòng (và lên tới `2 triệu` dòng ở Note 4), việc đo khoảng cách giữa từng cặp dòng làm máy treo rất lâu; ngoài ra phép đo khoảng cách bị nhiễu nặng khi bảng có tới 14 cột nhị phân `0/1`. |
-| ❌ **ARIMA / SARIMA cổ điển** | Công thức thống kê cổ điển chỉ nhìn vào 1 cột số xe duy nhất và bắt buộc các giờ phải nối tiếp nhau đều đặn không đứt quãng. | **Không chịu được dữ liệu bị "thủng lỗ":** Trạm đo của ta bị mất tín hiệu tới `11.987` giờ (có những đoạn mất điện liền cả tháng). ARIMA gặp chuỗi bị đứt quãng nhiều như vậy sẽ hỏng hoàn toàn, và nó cũng không tận dụng tốt 23 cột Lịch & Thời tiết. |
-| ❌ **Mạng nơ-ron sâu (`Deep Learning: LSTM / GRU`)** | Mô hình học sâu phức tạp chuyên dùng cho xử lý văn bản, giọng nói hoặc chuỗi liên tục khổng lồ. | **(1) Chuỗi bị đứt quãng 22,81% số giờ** làm gãy các đoạn chuỗi liên tục mà LSTM cần. **(2) Khi dữ liệu dạng bảng đã được chế biến sẵn các cột đặc trưng thông minh (`hour_sin/cos`, `is_rush_hour`, `lag_1h`, `lag_24h`, `roll_3h`)**, thực tế khoa học chứng minh **XGBoost đoán chính xác ngang hoặc hơn LSTM nhưng huấn luyện nhanh gấp hàng chục lần**, không cần máy có card đồ họa GPU đắt tiền và giải thích được rõ cột nào quan trọng nhất. |
-| ❌ **Logistic Regression / Naive Bayes / K-Means** | Các thuật toán chỉ dùng để đoán nhãn Đúng/Sai (`Classification`) hoặc tự gom nhóm khi không có đáp án (`Clustering`). | Mục tiêu chính của đề tài là **đoán một con số lượng xe cụ thể từ `0` đến `7.280` xe/giờ (bài toán Hồi quy — `Regression`)**, nên không thể dùng các thuật toán chỉ đoán nhãn 0/1 hay không có đáp án này được. |
+### 1.1. Dữ liệu này ở đâu ra và đo bằng cách nào?
+Nếu không hiểu dữ liệu sinh ra từ đâu ngoài đời thực, ta sẽ không bao giờ hiểu tại sao nó bị lỗi!
+* **Tên bộ dữ liệu:** *Metro Interstate Traffic Volume* (Mã **ID 492** trên kho dữ liệu học máy quốc tế **UCI Machine Learning Repository**), lưu tại [data/raw/metro_interstate_traffic_volume.csv](file:///d:/big%20data/btl_nhóm_3/data/raw/metro_interstate_traffic_volume.csv).
+* **Địa điểm thực tế:** Đặt trên tuyến đường cao tốc liên bang **I-94** (làn chạy về hướng Tây nối thành phố Minneapolis sang thành phố St. Paul, bang Minnesota, Mỹ — một bang sát biên giới Canada có mùa đông lạnh âm 20–30 độ C và rất nhiều tuyết).
+* **Cách người ta ghép tạo ra bảng dữ liệu này (Từ 3 nguồn khác nhau):**
+  1. **Nguồn 1 (Cảm biến mặt đường ATR 301 của Sở Giao thông Minnesota):** Cứ mỗi 1 giờ đồng hồ (ví dụ từ 08:00 đến 08:59), vòng từ dưới lòng đường đếm xem có tổng cộng bao nhiêu chiếc xe chạy qua $\rightarrow$ ghi thành cột **`traffic_volume`** và mốc giờ **`date_time`**.
+  2. **Nguồn 2 (Đài khí tượng trực tuyến OpenWeatherMap):** Lấy thông tin thời tiết tại khu vực đó theo từng giờ $\rightarrow$ ghép thêm 6 cột: **`temp`**, **`rain_1h`**, **`snow_1h`**, **`clouds_all`**, **`weather_main`**, **`weather_description`**.
+  3. **Nguồn 3 (Lịch nghỉ lễ của Mỹ và bang Minnesota):** Ghép thêm cột **`holiday`** đánh dấu ngày nghỉ lễ.
+* **Thời gian thu thập:** Kéo dài gần tròn **6 năm**, bắt đầu từ `02/10/2012 09:00:00` đến `30/09/2018 23:00:00`, tổng cộng có **`48.204` dòng** và **`9` cột**.
 
----
-
-### 4.3. Bảng tổng hợp 5 quyết định xử lý dữ liệu: "Tại sao làm cách A mà KHÔNG làm cách B?"
-
-| Tình huống trong bài | ✅ Cách nhóm ĐÃ DÙNG (Và tại sao đúng) | ❌ Cách KHÔNG NÊN DÙNG (Và tác hại nếu làm sai) |
-| :--- | :--- | :--- |
-| **1. Có 11.987 giờ trạm đo bị mất điện (`NaN` sau khi `reindex`)** | **Tính biến trễ trên lưới giờ liên tục rồi xóa bỏ các dòng trống (`dropna`):** Đảm bảo 100% trong `34.833` dòng còn lại đều là **số đo xe thật ngoài đời** và `lag_1h`, `lag_24h` trỏ đúng 1 giờ, 24 giờ trên đồng hồ. | **Nội suy (`interpolate` — tự điền số xe trung bình giả vào 11.987 giờ trống):** Vì có những đoạn trạm đo tắt liền nhiều tuần, nếu tự bịa số điền vào sẽ tạo ra hàng chục nghìn dòng **dữ liệu giả tạo**, làm máy học sai quy luật! |
-| **2. Xử lý các con số ngoại lai (`Outliers`)** | **Chỉ xóa ngoại lai vật lý do hỏng máy đo (`temp_c <= -50°C` và `rain_1h >= 500 mm`):** Chỉ xóa đúng 11 dòng chắc chắn 100% bị lỗi thiết bị (`0 K` và mưa `9,8 mét/giờ`). | **Dùng công thức thống kê `IQR` cắt hai đầu cột `traffic_volume`:** Sẽ xóa mất các giờ cao điểm đông nghẹt xe (`> 6.500` xe) hoặc đêm bão tuyết (`0` xe) — làm máy không học được lúc nào đường kẹt xe! |
-| **3. Mã hóa cột chữ `weather_main` (11 loại thời tiết)** | **Dùng `One-Hot Encoding` (tách thành 11 cột `0/1`):** Giúp 11 kiểu thời tiết độc lập, công bằng với nhau. | **Dùng `Label Encoding` (gán `Clear=1, Clouds=2, Rain=3, Snow=4...`):** Làm máy tính hiểu lầm tai hại rằng *"Tuyết (4) = 2 × Mây (2)"*! |
-| **4. Biểu diễn cột giờ `hour` (`0` đến `23`)** | **Giữ cả `hour` gốc và thêm cặp vòng tròn `hour_sin`, `hour_cos`:** Giúp cả mô hình phương trình (`Ridge`) lẫn mô hình cây (`Random Forest`, `XGBoost`) đều hiểu `23h` đêm sát cạnh `0h` sáng. | **Chỉ để mỗi số `hour` từ `0` đến `23`:** Mô hình `Ridge` sẽ tưởng `23h` đêm và `0h` sáng cách nhau tới 23 tiếng đồng hồ! |
-| **5. Dùng `StandardScaler` (co giãn về cùng thang đo)** | **Chỉ dùng `StandardScaler` cho `Ridge Regression`**, không cần dùng cho `Random Forest` và `XGBoost`. | **Không dùng cho `Ridge`:** Cột có số hàng nghìn (`lag_1h = 5000`) và cột chỉ có `0/1` (`is_holiday`) sẽ làm bộ phanh L2 của Ridge phạt sai lệch. Còn mô hình Cây chỉ hỏi so sánh lớn/nhỏ trên từng cột riêng nên không cần co giãn thang đo. |
-
----
-
-## PHẦN 5: TẠI SAO PHẢI CHIA DỮ LIỆU THEO THỜI GIAN & TẠI SAO PHẢI DÙNG `TimeSeriesSplit`?
-
-Hãy nắm chắc **3 câu hỏi "Tại sao?"** về cách chia dữ liệu ở Note 2 và Note 3:
-
-### 1. Tại sao không lấy cả 100% dữ liệu (`34.833` dòng) cho máy học hết luôn mà phải tách riêng Tập `Train` và Tập `Test`?
-* Nếu cho máy học hết cả 100% dữ liệu rồi lại lấy chính dữ liệu đó ra chấm điểm thì giống như **cho học sinh biết trước đề thi thật cuối kỳ để học thuộc lòng đáp án (`Overfitting` — học vẹt)**.
-* Vì vậy phải tách làm 2 phần:
-  * **Tập `Train` (`28.353` dòng = 81,4%, từ năm 2012 đến hết năm 2017):** Dùng làm **sách bài tập ôn ở nhà**.
-  * **Tập `Test` (`6.480` dòng = 18,6%, toàn bộ năm 2018):** Cất kín trong két sắt làm **đề thi tốt nghiệp cuối cùng** (máy chưa từng nhìn thấy năm 2018 trong lúc học).
-
-### 2. Tại sao phải cắt Train/Test theo mốc ngày `2018-01-01` mà CẤM dùng hàm chia ngẫu nhiên (`train_test_split` bốc thăm lộn xộn)?
-* Nếu bốc thăm ngẫu nhiên trên dữ liệu chuỗi thời gian: Giờ `08:00` sáng ngày 10/5/2015 rơi vào đề thi `Test`, nhưng giờ `09:00` sáng cùng ngày hôm đó lại rơi vào sách ôn tập `Train` (mà trong dòng 9h sáng lại có sẵn cột `lag_1h` chính là số xe của lúc 8h sáng!).
-* Như vậy máy tính đã được **nhìn trộm tương lai để quay ngược lại đoán quá khứ (`Data Leakage` — rò rỉ dữ liệu)**. Với chuỗi thời gian, bắt buộc phải cắt bằng một mốc ngày cố định (`2018-01-01`): học quá khứ (2012–2017) để dự báo tương lai (2018).
-
-### 3. Đã chia Train (2012–2017) và Test (2018) rồi, TẠI SAO BÊN TRONG TẬP TRAIN LẠI PHẢI DÙNG THÊM `TimeSeriesSplit (5 folds)`?
-* Khi huấn luyện `XGBoost` ở Note 3, ta muốn thử **72 cách vặn nút cài đặt (72 bộ siêu tham số)** khác nhau để tìm ra bộ cài đặt thông minh nhất.
-* **Làm sao chấm điểm 72 bộ cài đặt đó để biết bộ nào tốt nhất?**
-  * ❌ **Không được đem cả 72 bộ ra chấm trên Tập `Test` (năm 2018):** Vì Tập `Test` là đề thi tốt nghiệp cuối cùng, chỉ được mở két thi đúng 1 lần cuối. Nếu mang đề thi cuối kỳ ra thử 72 lần để chọn cài đặt thì chính là gian lận theo đề thi!
-  * ❌ **Không được dùng `K-Fold` thông thường (chia 5 phần rồi đảo qua đảo lại):** Vì `K-Fold` thường sẽ có vòng lấy năm 2016–2017 đi học để quay lại thi thử trên năm 2013 (lại phạm luật lấy tương lai đoán quá khứ!).
-* ✅ **Giải pháp duy nhất đúng luật là `TimeSeriesSplit (n_splits=5)` ngay bên trong Tập `Train` (2012–2017):**
-  Nó chia tập `Train` thành **5 vòng thi thử nối tiếp nhau theo dòng chảy thời gian** (phần học luôn nằm trước phần thi thử và mở rộng dần):
-  ```
-  Tập Train (2012 -> 2017) được chia làm 6 khúc thời gian nối tiếp nhau:
-
-  Vòng thi thử 1 (Fold 1): [ Học: Khúc 1 ] ➔ [ Thi thử: Khúc 2 ]
-  Vòng thi thử 2 (Fold 2): [ Học: Khúc 1 + 2 ] ➔ [ Thi thử: Khúc 3 ]
-  Vòng thi thử 3 (Fold 3): [ Học: Khúc 1 + 2 + 3 ] ➔ [ Thi thử: Khúc 4 ]
-  Vòng thi thử 4 (Fold 4): [ Học: Khúc 1 + 2 + 3 + 4 ] ➔ [ Thi thử: Khúc 5 ]
-  Vòng thi thử 5 (Fold 5): [ Học: Khúc 1 + 2 + 3 + 4 + 5 ] ➔ [ Thi thử: Khúc 6 ]
-  ```
-  Mỗi bộ cài đặt phải thi qua cả 5 vòng này rồi lấy **sai số trung bình của 5 vòng (`CV_RMSE_mean`)**. Bộ cài đặt nào có sai số trung bình 5 vòng thấp nhất mới được chọn để học lại trên toàn bộ tập `Train` (2012–2017) và bước vào kỳ thi thật trên tập `Test` (2018)!
+### 1.2. Ý nghĩa từng cột trong 9 cột gốc
+1. **`date_time` *(Kiểu ngày giờ)*:** Mốc ngày và giờ ghi nhận (trục xương sống của chuỗi thời gian).
+2. **`traffic_volume` *(Biến định lượng số nguyên — ĐÁP ÁN CẦN DỰ BÁO $y$)*:** Số xe ô tô qua trạm trong giờ đó (`0` đến `7.280` xe/giờ).
+3. **`holiday` *(Biến chữ phân loại)*:** Tên ngày lễ (gồm 11 ngày lễ lớn như *Christmas Day, Labor Day, New Years Day...*; nếu là ngày bình thường không nghỉ lễ thì file CSV gốc ghi chữ `'None'`).
+4. **`temp` *(Biến định lượng số thực)*:** Nhiệt độ không khí đo theo đơn vị vật lý **độ Kelvin (K)** (lưu ý: `0°C = 273,15 K`).
+5. **`rain_1h` *(Biến định lượng số thực)*:** Lượng mưa rơi trong 1 giờ đó (đơn vị: `mm`).
+6. **`snow_1h` *(Biến định lượng số thực)*:** Lượng tuyết rơi trong 1 giờ đó (đơn vị: `mm`).
+7. **`clouds_all` *(Biến định lượng số nguyên)*:** Độ che phủ của mây trên bầu trời (đơn vị: `%`, từ `0%` trời trong vắt đến `100%` mây kín trời).
+8. **`weather_main` *(Biến chữ phân loại)*:** Nhóm hiện tượng thời tiết chính (có **11 loại**: *Clear, Clouds, Rain, Drizzle, Mist, Fog, Haze, Smoke, Snow, Squall, Thunderstorm*).
+9. **`weather_description` *(Biến chữ phân loại)*:** Câu mô tả thời tiết chi tiết hơn của `weather_main` (có tới **38 loại** nhỏ như *light rain, moderate rain, heavy intensity rain, scattered clouds...*).
 
 ---
 
-## PHẦN 6: BẢN CHẤT KẾT QUẢ BIG DATA Ở NOTEBOOK 04 — KHI NÀO DÙNG PANDAS/SKLEARN, KHI NÀO DÙNG PYSPARK?
+# BƯỚC 2: PHÂN TÍCH KHÁM PHÁ DỮ LIỆU (`EDA` — `Note 01`) — ĐỌC HIỂU TỪNG BẢNG & TỪNG HÌNH ĐỂ CHUẨN BỊ CHO BƯỚC TIỀN XỬ LÝ
 
-Ở Note 4, nhóm nhân bản bảng dữ liệu sạch lên 4 mức quy mô: **x1 (`34.833` dòng ~ `0,19 MB`)**, **x10 (`348.330` dòng ~ `9,1 MB`)**, **x30 (`1.044.990` dòng ~ `28,9 MB`)**, **x60 (`2.089.980` dòng ~ `58,6 MB`)** rồi cho **`pandas/scikit-learn`** và **`PySpark MLlib` (`local[*]`)** cùng huấn luyện mô hình `RandomForest (50 cây, độ sâu 10)` trên 1 chiếc laptop (CPU 6 nhân 12 luồng, RAM 8 GB).
+> **Tư duy cốt lõi bạn cần nhớ:**  
+> Người mới học thường nhảy bổ vào xóa dữ liệu hoặc chạy mô hình ngay mà bỏ qua `EDA`. Nhưng trong Khoa học Dữ liệu, **`EDA` chính là tờ phiếu xét nghiệm của bác sĩ**: bác sĩ phải đọc phim X-quang (`EDA`) thấy xương gãy chỗ nào, máu nhiễm khuẩn chỗ nào thì sang Bước 3 (**Tiền xử lý**) mới kê đúng thuốc chữa bệnh đó, và sang Bước 4 (**Tạo đặc trưng**) mới biết chế tạo cột gì!
 
-**Kết quả thu được và cách hiểu đúng bản chất:**
-1. **Tại sao từ mức `x1` đến `x60` (2,09 triệu dòng), `pandas/scikit-learn` lại chạy NHANH HƠN và TỐN ÍT RAM HƠN `PySpark`?**
-   *Ở `x1`: `sklearn` mất `0,17s`, `Spark` mất `9,19s` (nhanh hơn 55,36 lần). Ở `x60`: `sklearn` mất `40,31s` (`1,23 GB RAM`), `Spark` mất `135,35s` (`2,67 GB RAM` — chỉ còn nhanh hơn 3,36 lần).*
-   * **Lý do:** Dù 2,09 triệu dòng nghe có vẻ nhiều, nhưng dung lượng thực tế chỉ có **`58,56 MB`** — quá nhỏ so với thanh **RAM 8 GB** của laptop! `pandas/scikit-learn` nạp thẳng 58 MB đó vào RAM của Python/C++ và tính ngay lập tức. Trong khi đó, `PySpark` phải gánh **chi phí thủ tục cố định (`Overhead`)**: khởi tạo Máy ảo Java (`JVM`), lập bản đồ kế hoạch (`DAG`), cắt dữ liệu thành 12 khúc (`Partitions`), đóng gói dữ liệu gửi qua lại giữa Python và Java... Khi chạy trên 1 máy đơn với dữ liệu vừa RAM, tiền "thủ tục hành chính" của Spark tốn hơn cả thời gian tính toán!
-2. **Vậy tại sao `PySpark` lại là công cụ bắt buộc khi bước vào thế giới Big Data thật sự?**
-   * **Thứ nhất — Nhìn tốc độ tăng thời gian (`Scalability`):** Khi dữ liệu tăng **60 lần** (`x1 → x60`), thời gian chạy của `pandas/scikit-learn` bị phình to gấp **242,8 lần**, trong khi thời gian của `PySpark` chỉ tăng có **14,7 lần**!
-   * **Thứ hai — Vượt giới hạn bộ nhớ RAM 1 máy:** `pandas/scikit-learn` bắt buộc 100% dữ liệu phải nhét vừa trong RAM của 1 máy tính. Nếu dữ liệu thực tế từ hàng nghìn trạm đo giao thông cả nước lên tới **hàng trăm triệu / hàng tỷ dòng (50 GB – 1 TB)**, máy chạy `pandas/sklearn` sẽ **tràn RAM và sập ngay lập tức**. Ngược lại, `PySpark` có thể tự động **tràn dữ liệu tạm xuống ổ cứng (`Disk Spill`)** và đặc biệt là **kết nối hàng chục máy chủ thành một cụm (`Cluster`)** để chia việc chạy song song!
+Dưới đây là **4 phát hiện "Bắt bệnh"** từ bảng khảo sát và **5 phát hiện "Tìm quy luật + Bắt bệnh"** từ 5 hình vẽ EDA trong [code/note_01.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_01.ipynb):
 
 ---
 
-## PHẦN 7: CÔNG THỨC 6 BƯỚC ĐỂ BẠN TỰ LÀM MỌI DỰ ÁN DATA SCIENCE / BIG DATA SAU NÀY
+## 2.1. Đọc 3 Ô Khảo Sát Đầu `Note 01` (Cell 1 → Cell 3) — Phát hiện ngay "4 Căn Bệnh" của Dữ liệu thô
 
-Sau đồ án này, gặp bất kỳ bài toán mới nào (dự báo giá nhà, doanh số bán hàng, điện năng tiêu thụ...), bạn chỉ cần áp dụng đúng 6 bước:
-1. **Bước 1 (Hiểu bài toán):** Cột đáp án $y$ là con số (*Hồi quy*) hay nhãn nhóm (*Phân loại*)? Dữ liệu có theo trục thời gian (*Chuỗi thời gian*) không? Các cột đầu vào $X$ gồm những cột số, cột chữ, cột ngày giờ nào?
-2. **Bước 2 (Khám phá `EDA` — Như Note 1):** Kiểm tra ô trống (`NaN`), dòng trùng lặp, số ngoại lai vô lý và vẽ biểu đồ tìm quy luật giữa $X$ và $y$.
-3. **Bước 3 (Làm sạch & Tạo đặc trưng — Như Note 2):** Xóa trùng, lọc ngoại lai hỏng máy đo, trải lưới thời gian đều đặn (`reindex` nếu là chuỗi thời gian), tách cột ngày giờ (`hour`, `day_of_week`, `sin/cos`), biến cột chữ thành các cột `0/1` (`One-Hot Encoding`), tạo biến trễ quá khứ (`lag`, `shift(1).rolling()`).
-4. **Bước 4 (Chia dữ liệu đúng luật — Như đầu Note 3):** Dữ liệu thường thì chia ngẫu nhiên + `K-Fold`; dữ liệu Chuỗi thời gian thì bắt buộc **cắt theo mốc ngày cố định** (Quá khứ = `Train`, Tương lai = `Test`) và dùng **`TimeSeriesSplit`** bên trong tập `Train` để thi thử chọn siêu tham số.
-5. **Bước 5 (Huấn luyện từ đơn giản đến nâng cao & Phân tích lỗi — Như Note 3):** Luôn chạy 1 mô hình **Baseline** làm mốc sàn $\rightarrow$ Mô hình đường thẳng (**Ridge** kèm `StandardScaler`) $\rightarrow$ Mô hình cây kết hợp (**Random Forest**, **XGBoost**); chấm điểm bằng nhiều chỉ số (`MAE, RMSE, MAPE, R²`) và kiểm tra xem mô hình hay đoán sai ở trường hợp nào nhất.
-6. **Bước 6 (Đánh giá khả năng mở rộng hệ thống — Như Note 4):** Nếu dữ liệu chỉ vài chục nghìn đến vài triệu dòng nằm gọn trong RAM 1 máy thì dùng `pandas/scikit-learn` cho nhanh và nhẹ; nếu dữ liệu lên hàng chục GB / hàng trăm triệu dòng vượt RAM 1 máy hoặc chạy trên cụm nhiều máy chủ thì chuyển sang `PySpark`.
+### 🔎 Chẩn đoán số 1 (Từ Cell 1 — Kiểm tra giai đoạn & tính liên tục thời gian): Chuỗi thời gian bị "thủng lỗ" mất `11.976` giờ!
+* **Cách kiểm tra trong EDA:** Lấy mốc cuối (`30/09/2018 23:00`) trừ mốc đầu (`02/10/2012 09:00`) thấy tổng cộng trên đồng hồ phải có **`52.551` giờ**. Nhưng đếm số mốc giờ khác nhau trong bảng chỉ có **`40.575` giờ**! Đếm theo từng năm thì thấy năm 2014 chỉ có `4.839` dòng và năm 2015 chỉ có `4.373` dòng (trong khi 1 năm đủ phải có `8.760` giờ!).
+* **Kết luận của EDA gửi sang Tiền xử lý:** Trạm cảm biến đếm xe đã bị tắt điện / ngừng bảo trì mất **`11.976` giờ** (có những đợt tắt liền nhiều ngày, nhiều tháng). Dữ liệu **không liên tục đều đặn từng giờ**, nên sang Bước 3 (`Cell 4` của `Note 02`) nếu muốn tính số xe của "1 giờ trước" hay "24 giờ trước" thì **tuyệt đối cấm đếm lùi dòng trực tiếp** mà phải dựng lại khung lịch chuẩn!
+
+### 🔎 Chẩn đoán số 2 (Từ Cell 2 — Kiểm tra `Null / NaN` ở cột `holiday`): Cả 2 cái bẫy nằm trong 1 cột!
+* **Cách kiểm tra trong EDA:** Đếm số ô bị `NaN` thấy 8 cột kia sạch bóng (`0%` thiếu), riêng cột `holiday` báo `NaN` tới **`48.143` dòng (`99,87%`)**, chỉ có **`61` dòng** có chữ tên lễ! Soi tiếp xem 61 dòng có tên lễ đó nằm ở giờ nào trong ngày thì thấy **tất cả 100% đều nằm ở đúng `[0]` (`00:00:00` nửa đêm)**!
+* **Kết luận của EDA gửi sang Tiền xử lý:**
+  1. `48.143` ô `NaN` kia **không phải là dữ liệu bị mất**, mà do ngày bình thường người ta ghi chữ `'None'`, khi Python đọc file CSV đã hiểu nhầm chữ `'None'` thành ô rỗng `NaN`!
+  2. Nguy hiểm hơn: Một ngày nghỉ lễ kéo dài suốt 24 tiếng (từ `00:00` đến `23:00`), nhưng dữ liệu gốc chỉ đánh dấu lễ lúc `00:00` đêm, còn từ `01:00` sáng đến `23:00` đêm của ngày lễ đó lại ghi là ngày thường! Sang Bước 3 (`Cell 1` & `Cell 5` của `Note 02`) bắt buộc phải **gom 53 ngày lễ và lan truyền nhãn lễ từ lúc 0h ra toàn bộ 24 giờ của ngày hôm đó**!
+
+### 🔎 Chẩn đoán số 3 (Từ Cell 2 — Kiểm tra trùng lặp): `48.204` dòng nhưng chỉ có `40.575` giờ!
+* **Cách kiểm tra trong EDA:** Đếm dòng trùng hệt cả 9 cột ra **`17` dòng**. Đếm dòng bị lặp lại cùng một mốc `date_time` ra tới **`7.629` dòng**! Khi in thử mốc giờ `2013-04-18 22:00:00` ra xem thì thấy giờ đó lặp lại **6 dòng liên tiếp**: cả 6 dòng đều có số xe `traffic_volume = 1.532`, chỉ khác nhau nhãn thời tiết (*Mist, Drizzle, light rain, moderate rain, heavy snow, snow*).
+* **Kết luận của EDA gửi sang Tiền xử lý:** Nguyên nhân trùng giờ là do nguồn thời tiết (Nguồn 2) gắn nhiều nhãn thời tiết cho cùng 1 giờ mưa tuyết hỗn hợp. Trong bài toán dự báo theo giờ, **mỗi giờ chỉ được phép tồn tại đúng 1 dòng duy nhất**, nên sang Bước 3 (`Cell 2` của `Note 02`) phải khử toàn bộ `7.629` dòng trùng giờ này!
+
+### 🔎 Chẩn đoán số 4 (Từ Cell 3 — Bảng thống kê `describe` các cột số): Bắt quả tang 11 dòng hỏng cảm biến thời tiết!
+* **Cách kiểm tra trong EDA:** Nhìn vào cột `min` (nhỏ nhất) và `max` (lớn nhất) của bảng thống kê:
+  * Cột `temp` có `min = 0,00 Kelvin` (đổi ra độ C là **`-273,15°C`** — lạnh bằng ngoài không gian vũ trụ!), có **`10` dòng** bị như vậy.
+  * Cột `rain_1h` có `25% = 0`, `50% = 0`, `75% = 0`, nhưng `max` vọt lên **`9.831,30 mm/giờ`** (gần 10 mét nước mưa trút xuống trong 1 tiếng đồng hồ!), làm độ lệch chuẩn `std` vọt lên `44,79 mm` — có **`1` dòng** bị như vậy.
+* **Kết luận của EDA gửi sang Tiền xử lý:** Đây chắc chắn 100% là **ngoại lai vật lý do chập/mất tín hiệu cảm biến thời tiết**, sang Bước 3 (`Cell 3` của `Note 02`) phải đổi `temp` từ Kelvin sang độ C và cắt bỏ đúng 11 dòng lỗi này!
+
+---
+
+## 2.2. Đọc Hiểu Từng Hình Trong 5 Hình EDA (Cell 4 → Cell 8 `Note 01`) — Nhìn Hình Thấy Gì & Dùng Nó Thế Nào Cho Bước Sau?
+
+### 📊 HÌNH EDA 1 (`Cell 4`): Phân bố mật độ & Hộp trải rộng của `traffic_volume`
+![Hình EDA 1 - Phân bố lưu lượng giao thông](figures/fig_eda1_distribution.png)
+
+* **Nhìn vào hình này bạn đọc như thế nào?**
+  1. **Hình bên trái (Biểu đồ phân phối tần suất `Histogram` & Đường mật độ `KDE`):** Trục ngang là số lượng xe/giờ (`0` đến `7.280`), trục đứng là số lượng giờ xuất hiện mức xe đó. Bạn thấy đường cong không có hình quả chuông 1 đỉnh như chiều cao hay cân nặng con người, mà nhô lên thành **2 đỉnh rõ rệt (gọi là Phân phối 2 đỉnh — `Bimodal`)**:
+     * **Cụm đỉnh thứ nhất bên trái (`200 – 800` xe/giờ):** Tập trung các giờ **đêm khuya và rạng sáng** đường vắng.
+     * **Cụm đỉnh thứ hai bên phải (`4.200 – 5.800` xe/giờ):** Tập trung các giờ **ban ngày và cao điểm** đường đông.
+     * Vạch đỏ đứt nét là Trung bình (`3.291` xe), vạch xanh chấm là Trung vị (`3.427` xe) nằm lơ lửng ở thung lũng giữa 2 đỉnh!
+  2. **Hình bên phải (Biểu đồ hộp `Boxplot`):** Hộp màu xanh chứa 50% dữ liệu ở giữa (từ `~1.249` đến `~4.952` xe), hai râu kéo dài chạm `0` và `7.280`, **không có bất kỳ dấu chấm đen lẻ loi nào văng ra ngoài râu hộp**!
+* **👉 Từ Hình EDA 1 này, bạn rút ra chỉ dẫn gì cho Bước Tiền xử lý & Mô hình?**
+  * **Chỉ dẫn cho Tiền xử lý:** Khẳng định biến mục tiêu `traffic_volume` hoàn toàn sạch, **KHÔNG CÓ ngoại lai lỗi**, nên ở Bước 3 tuyệt đối **không được dùng công thức cắt ngoại lai lên cột `traffic_volume`**!
+  * **Chỉ dẫn cho Tạo đặc trưng & Mô hình:** Vì phân phối tách làm 2 thế giới Ngày – Đêm quá khác biệt, nếu không có đặc trưng phân tách Ngày – Đêm (như `hour`, `hour_cos`) thì mô hình sẽ chỉ đoán loanh quanh mức trung bình `3.291` xe (rơi đúng vào vùng thung lũng ít xảy ra nhất!).
+
+---
+
+### 📊 HÌNH EDA 2 (`Cell 5`): Quy luật lưu lượng theo 24 giờ — Ngày thường vs Cuối tuần
+![Hình EDA 2 - Lưu lượng theo giờ Ngày thường vs Cuối tuần](figures/fig_eda2_hourly_weekday_weekend.png)
+
+* **Nhìn vào hình này bạn đọc như thế nào?**
+  * Trục ngang là 24 giờ trong ngày (`0h` $\rightarrow$ `23h`), trục đứng là số xe trung bình.
+  * **Đường màu xanh (Ngày thường Thứ 2 – Thứ 6):** Vẽ nên hình **chữ M (2 đỉnh nhọn)** cực kỳ rõ: vọt lên đỉnh cao điểm đi làm buổi sáng lúc **`7h – 8h` (`~5.700 – 6.000` xe)**, hạ nhẹ buổi trưa (`~4.500` xe), rồi vọt lên đỉnh cao điểm tan tầm buổi chiều lúc **`16h – 17h` (`> 6.000` xe)** trước khi lao dốc về đêm.
+  * **Đường màu cam (Cuối tuần Thứ 7 – Chủ Nhật):** Khác một trời một vực! Lúc 7h–8h sáng người dân ngủ nướng nên chỉ có `~1.500 – 2.200` xe, **hoàn toàn không có đỉnh sáng**, chỉ có **1 đỉnh tròn thoải duy nhất vào buổi trưa – chiều (`12h – 16h`, khoảng `4.300` xe)**.
+  * Ngoài ra nhìn hai đầu trục ngang: lúc `23h` đêm (`~1.100` xe) nối tiếp mượt mà sang `0h` đêm (`~830` xe).
+* **👉 Từ Hình EDA 2 này, bạn rút ra chỉ dẫn gì cho Bước Tạo đặc trưng (Note 2)?**
+  1. Phải tách cột **`hour`** (`0..23`) và tạo cột nhị phân **`is_weekend`** (`0/1` phân tách đường xanh và đường cam).
+  2. Quan trọng nhất: Phải chế tạo đặc trưng tương tác **`is_rush_hour`** (chỉ bật bằng `1` tại đúng 2 dải tô màu hồng `7h–9h` và `16h–18h` **NHƯNG chỉ dành cho đường màu xanh Ngày thường**, không bật cho đường màu cam Cuối tuần!).
+  3. Vì `23h` đêm nối liền sang `0h` sáng theo chu kỳ khép kín, phải tạo thêm cặp **`hour_sin`** và **`hour_cos`** để cuộn trục ngang thành vòng tròn!
+
+---
+
+### 📊 HÌNH EDA 3 (`Cell 6`): Tác động của Thời tiết & Ngày nghỉ lễ đến lưu lượng
+![Hình EDA 3 - Ảnh hưởng Thời tiết và Ngày lễ](figures/fig_eda3_weather_holiday.png)
+
+* **Nhìn vào hình này bạn đọc như thế nào?**
+  * **Khung trái (Biểu đồ hộp `Boxplot` theo 11 nhóm thời tiết `weather_main`, sắp xếp trung vị giảm dần):** Trời quang đãng, có mây (`Clouds`, `Haze`, `Clear`) duy trì lưu lượng trung vị cao nhất (`~3.400 – 3.700` xe/giờ). Ngược lại, khi xuất hiện thời tiết nguy hiểm làm giảm tầm nhìn và trơn trượt mặt đường như **Tuyết rơi (`Snow`), Sương mù dày (`Fog`), Gió giật bão (`Squall`), Giông sét (`Thunderstorm`)**, lưu lượng trung vị sụt giảm mạnh!
+  * **Khung phải (So sánh ban ngày `7h–18h` theo 3 loại ngày):** Sau khi gán nhãn lễ cho cả 24 giờ trong ngày lễ, hộp **Ngày lễ (màu xanh lá)** có mức lưu lượng thấp nhất (trung vị chỉ `~3.300` xe), thấp hơn cả **Cuối tuần (màu cam, `~3.800` xe)** và thấp hơn rất xa **Ngày làm việc (màu xanh dương, `~5.000` xe)**!
+* **👉 Từ Hình EDA 3 này, bạn rút ra chỉ dẫn gì cho Bước Tiền xử lý & Tạo đặc trưng?**
+  1. Bắt buộc phải sửa lỗi cột `holiday` (vốn chỉ gắn lúc 0h đêm) bằng cách **lan truyền `is_holiday = 1` cho toàn bộ 24 giờ của ngày lễ**, đồng thời loại trừ ngày lễ ra khỏi biến giờ cao điểm `is_rush_hour`!
+  2. Bắt buộc phải giữ thông tin `weather_main` và chuyển từ chữ sang số bằng **One-Hot Encoding (11 cột `wm_*`)** để máy nhận diện được trời tuyết, sương mù, giông bão.
+
+---
+
+### 📊 HÌNH EDA 4 (`Cell 7`): Bản đồ nhiệt (`Heatmap`) Lưu lượng trung bình theo Thứ × Giờ
+![Hình EDA 4 - Heatmap Thứ và Giờ](figures/fig_eda4_heatmap_day_hour.png)
+
+* **Nhìn vào hình này bạn đọc như thế nào?**
+  * Mỗi ô nhỏ là số xe trung bình của một **Thứ cụ thể (hàng dọc)** vào một **Giờ cụ thể (hàng ngang)**: màu càng đỏ đậm xe càng đông, màu càng vàng nhạt xe càng vắng.
+  * Thấy rõ khối đỏ rực nằm từ **Thứ Hai đến Thứ Sáu** ở cột `6h–8h` (`5.200 – 6.172` xe) và cột `15h–17h` (`5.500 – 6.414` xe); đồng thời thấy sự khác nhau tinh vi giữa các ngày trong tuần (chiều Thứ Sáu đỏ sớm từ `14h` và tối Thứ Sáu – Thứ Bảy `21h–23h` cam đậm hơn tối đầu tuần; sáng Chủ Nhật vàng nhạt vắng nhất tuần).
+* **👉 Từ Hình EDA 4 này, bạn rút ra chỉ dẫn gì?**
+  1. Ngoài biến gộp `is_weekend`, vẫn phải giữ cột **`day_of_week` (`0` → `6`)** để phân biệt Thứ Sáu với Thứ Hai, Thứ Bảy với Chủ Nhật.
+  2. Cho thấy mối quan hệ giữa Thứ và Giờ là **tương tác 2 chiều dạng ô lưới (phi tuyến)** $\rightarrow$ dự báo trước rằng ở Bước 5, các mô hình **Cây quyết định (`Random Forest`, `XGBoost`)** sẽ mạnh hơn hẳn mô hình đường thẳng `Linear / Ridge Regression`!
+
+---
+
+### 📊 HÌNH EDA 5 (`Cell 8`): Tương quan biến số thô & Sóng Tự tương quan theo độ trễ (`Lag 1h → 48h`)
+![Hình EDA 5 - Tương quan và Tự tương quan](figures/fig_eda5_correlation_autocorr.png)
+
+* **Nhìn vào hình này bạn đọc như thế nào?**
+  1. **Khung trái (Ma trận tương quan Pearson của các cột số thô, lọc `temp > 0`):** Nhìn hàng đầu tiên (`traffic_volume`), các con số tương quan tuyến tính đều rất khiêm tốn: `hour` chỉ `+0,35`, `temp` chỉ `+0,13`, `rain_1h` = `0,00`, `snow_1h` = `0,00`, `clouds_all` = `+0,04`, `day_of_week` = `−0,15`. *Tại sao thấp vậy?* Vì quan hệ của chúng với lượng xe là đường cong / rẽ nhánh chứ không phải đường thẳng!
+  2. **Khung phải (Hệ số tự tương quan của `traffic_volume` từ trễ 1 giờ đến 48 giờ trước):**
+     * Cột đầu tiên **`Lag 1h`** cao vọt sát **`+0,92`** (1 tiếng trước đông thì tiếng này cũng đông!).
+     * Đồ thị uốn hình sóng: tụt xuống đáy âm ở `Lag 12h` (`−0,60`, ngày ngược với đêm), rồi **nhô cao vọt lên đỉnh nhọn ở đúng vạch đứt đỏ `Lag 24h` (`+0,83` — cùng giờ ngày hôm qua)** và lặp lại ở **`Lag 48h` (`+0,77` — cùng giờ 2 ngày trước)**!
+* **👉 Từ Hình EDA 5 này, bạn rút ra chỉ dẫn quyết định gì cho Note 2?**
+  * Khung trái chứng minh: **Phải làm Feature Engineering** (tạo `hour_cos`, `is_rush_hour`) để nâng tín hiệu lên!
+  * Khung phải chứng minh trực tiếp lý do sinh ra đúng **3 đặc trưng trễ ở Bộ B**: lấy đỉnh sát nhất **`lag_1h`**, cụm ngắn hạn 3 giờ đầu **`roll_3h`**, và đỉnh chu kỳ ngày **`lag_24h`**!
+
+---
+
+# BƯỚC 3: TIỀN XỬ LÝ & LÀM SẠCH DỮ LIỆU (`Cell 1 → Cell 4 của Note 02`) — TỪ CHẨN ĐOÁN CỦA EDA ĐƯA RA PHƯƠNG PHÁP XỬ LÝ (TẠI SAO DÙNG CÁCH NÀY MÀ KHÔNG DÙNG CÁCH KIA?)
+
+Từ 4 căn bệnh mà `EDA` vừa vạch trần ở Bước 2, nhóm thiết kế quy trình làm sạch 6 bước gọn trong 4 ô code đầu của [code/note_02.ipynb](file:///d:/big%20data/btl_nhóm_3/code/note_02.ipynb) (`Cell 1`: Ngày lễ $\rightarrow$ `Cell 2`: Khử trùng giờ $\rightarrow$ `Cell 3`: Đổi `°C` & lọc ngoại lai vật lý $\rightarrow$ `Cell 4`: Lưới giờ `reindex` & tính biến trễ). Với mỗi bệnh, hãy nắm rõ **các phương án có thể có** và **lý do nhóm chọn phương án tối ưu**:
+
+---
+
+### 🛠️ Xử lý Bệnh 1: Cột `holiday` bị `NaN` (`99,87%`) và chỉ gắn nhãn lễ lúc `00:00` đêm
+* **Các phương pháp xử lý `NaN` thường gặp trong sách vở:**
+  1. ❌ *Xóa bỏ cột có trên 90% `NaN` (`drop column`):* Sai lầm nghiêm trọng! Vì `NaN` ở đây thực chất là chữ `'None'` (ngày thường), và Hình EDA 3 vừa chứng minh ngày lễ làm lưu lượng ban ngày giảm từ `5.000` xuống `3.300` xe — xóa cột này là vứt bỏ thông tin cực quý!
+  2. ❌ *Chỉ đổi `NaN` thành `'None'` rồi mã hóa luôn từng dòng:* Vẫn sai! Vì 23 giờ ban ngày (`01:00`–`23:00`) của ngày lễ vẫn đang mang chữ `'None'`!
+  3. ✅ **Phương pháp nhóm ĐÃ DÙNG (Chuẩn hóa chuỗi + Trích tập ngày lễ chuẩn hóa + Lan truyền 24h):**
+     * Đổi `NaN` về lại chuỗi `"None"`.
+     * Lọc `61` dòng có tên lễ (`!= "None"`), cắt bỏ giờ-phút-giây để lấy danh sách **`53` ngày lễ duy nhất** lưu vào tập `holiday_days` **NGAY TRƯỚC KHI xóa trùng giờ** (để không bị mất nhãn lễ nếu mốc `00:00` có dòng trùng).
+     * Sau đó hễ dòng nào có phần Ngày thuộc `holiday_days` thì gán **`is_holiday = 1` cho trọn vẹn cả 24 giờ** của ngày hôm đó!
+
+---
+
+### 🛠️ Xử lý Bệnh 2: Dữ liệu bị trùng `17` dòng hoàn toàn và trùng `7.629` dòng mốc giờ `date_time`
+* **Các phương pháp xử lý có thể cân nhắc:**
+  1. ❌ *Chỉ xóa `17` dòng trùng hoàn toàn cả 9 cột (`df.drop_duplicates()`):* Không đủ! Vẫn còn `7.612` dòng trùng mốc giờ `date_time` (như ví dụ 1 giờ lặp 6 dòng thời tiết), làm sai lệch bước nhảy thời gian 1 giờ và làm các giờ mưa bão bị nhân trọng số gấp nhiều lần.
+  2. ❌ *Gộp (`groupby`) theo `date_time` rồi nối ghép chuỗi thời tiết lại:* Sinh ra hàng trăm tổ hợp nhãn thời tiết lai ghép cực hiếm (ví dụ `"Rain+Mist+Drizzle"` chỉ xuất hiện 1–2 lần), làm nổ số lượng cột One-Hot thưa thớt không học được.
+  3. ✅ **Phương pháp nhóm ĐÃ DÙNG (Sắp xếp ổn định `mergesort` + `drop_duplicates(subset=["date_time"], keep="first")`):**
+     * Dùng thuật toán sắp xếp ổn định `mergesort` theo `date_time` để bảo toàn 100% thứ tự bản ghi gốc, rồi giữ bản ghi đầu tiên của mỗi mốc giờ (bản tin thời tiết chính đầu giờ) và xóa `7.629` dòng lặp $\rightarrow$ đưa bảng từ `48.204` dòng về đúng **`40.575` mốc giờ duy nhất** (`assert df["date_time"].is_unique`).
+
+---
+
+### 🛠️ Xử lý Bệnh 3: Ngoại lai lỗi cảm biến (`10` dòng `0 K` & `1` dòng mưa `9.831,3 mm`)
+* **Các phương pháp xử lý Ngoại lai (`Outliers`) trong Khoa học Dữ liệu:**
+  1. ❌ *Lọc thống kê tự động bằng `IQR` ($Q_1 - 1,5\text{IQR}$; $Q_3 + 1,5\text{IQR}$) hoặc `Z-score` ($|z| > 3$) trên toàn bộ các cột số:*
+     * Nếu áp lên `rain_1h` và `snow_1h` (vốn có $Q_1 = Q_3 = 0 \Rightarrow \text{IQR} = 0$!), công thức `IQR` sẽ **xóa sạch sành sanh 100% những giờ có mưa và có tuyết**!
+     * Nếu áp lên `traffic_volume` hay `temp_c`, có nguy cơ cắt mất các giờ cao điểm kẹt xe hoặc những ngày mùa đông lạnh sâu thật sự của bang Minnesota.
+  2. ❌ *Thay thế ngoại lai bằng giá trị trung bình:* Làm sai điều kiện thời tiết thực của giờ đó (trong khi toàn bảng có 40.575 dòng, bỏ đi 11 dòng lỗi chỉ chiếm `0,03%` — không ảnh hưởng mảy may kích thước mẫu!).
+  3. ✅ **Phương pháp nhóm ĐÃ DÙNG (Đổi đơn vị sang độ C + Lọc theo Ngưỡng Vật Lý Rõ Ràng):**
+     * Đổi `temp_c = temp - 273.15`.
+     * Đặt ngưỡng vật lý chắc chắn 100% là hỏng thiết bị: xóa dòng có **`temp_c <= -50°C`** (loại đúng 10 dòng `-273,15°C`, đưa `min` về **`-29,76°C`** đúng thực tế mùa đông Minnesota) và xóa dòng có **`rain_1h >= 500 mm`** (loại đúng 1 dòng `9.831,3 mm`, đưa `max` về **`55,63 mm`** và kéo `Std` từ `48,81` xuống **`0,77 mm`**), giữ nguyên vẹn 100% biến mục tiêu `traffic_volume` $\rightarrow$ còn **`40.564` dòng**.
+
+---
+
+### 🛠️ Xử lý Bệnh 4: Chuỗi thời gian bị đứt quãng, khuyết mất `11.987` giờ (`22,81%`) trên tổng `52.551` giờ
+* **Các phương pháp xử lý dữ liệu khuyết (`Missing / Null`) trên chuỗi thời gian & Tại sao chọn/bỏ:**
+  1. ❌ *Lờ đi khoảng trống, tính thẳng `.shift(1)` và `.shift(24)` trên bảng `40.564` dòng:* **Sai nghiêm trọng!** Khi trạm mất điện từ 11h đến 14h, dòng 10h nằm sát trên dòng 15h $\rightarrow$ máy lấy nhầm số xe của 10h gán làm `lag_1h` cho 15h (sai lệch tới **11.743 dòng** `lag_24h`!).
+  2. ❌ *Trải lưới `reindex` rồi dùng Nội suy tuyến tính (`interpolate`), điền số trung bình (`fillna(mean)`), hoặc kéo số cũ đắp sang (`ffill`) cho `11.987` giờ trống:*
+     * Như bảng khảo sát theo năm ở Bước 2 đã chỉ ra, năm 2014–2015 có những giai đoạn trạm đo **nghỉ bảo trì liên tục hàng trăm giờ (nhiều tuần lễ liền)**!
+     * Nếu dùng `ffill` hay `interpolate` nối qua hàng tuần lễ mất điện đó, ta sẽ **bịa ra gần 12.000 dòng dữ liệu giao thông nhân tạo hoàn toàn không có thật**, làm méo mó quá trình học và làm sai lệch kết quả chấm điểm mô hình!
+  3. ✅ **Phương pháp nhóm ĐÃ DÙNG (`Reindex` lên lưới giờ chuẩn 1h $\rightarrow$ Tính biến trễ trên lưới $\rightarrow$ Lọc bỏ dòng `NaN` bằng `dropna`):**
+     * **Bước a:** Tạo khung lịch chuẩn cách đều 1 giờ từ đầu đến cuối gồm **`52.551` giờ**, dùng `reindex` áp `40.564` dòng thật vào (lộ ra `11.987` dòng trống `NaN` ở đúng các giờ mất điện).
+     * **Bước b:** Tính 3 cột `lag_1h` (`.shift(1)`), `lag_24h` (`.shift(24)`), `roll_3h` (`.shift(1).rolling(3).mean()`) ngay trên lưới `52.551` giờ này $\rightarrow$ đảm bảo mọi phép lùi dòng đều **đúng từng giờ trên đồng hồ 100%**; chỗ nào giờ trước bị mất điện thì biến trễ nhận `NaN` trung thực chứ không lấy nhầm giờ khác!
+     * **Bước c:** Xóa bỏ `11.987` dòng trống không có số đo xe thật và xóa thêm `5.731` dòng nằm sát ngay sau các đợt mất điện (vì bị thiếu ít nhất 1 trong 3 biến trễ) $\rightarrow$ thu được **`34.833` dòng sạch tuyệt đối** (100% số đo thật, 0% ô `NaN`, dùng chung đồng nhất cho cả Bộ A và Bộ B để so sánh công bằng!).
+
+---
+
+# BƯỚC 4: TẠO ĐẶC TRƯNG (`Feature Engineering`) & TẠI SAO PHẢI XUẤT RA 2 FILE `.parquet` VÀ `.json` TRƯỚC KHI VÀO MODEL? (`Cuối Note 02`)
+
+## 4.1. Từ kết quả EDA chế tạo ra 26 Đặc trưng (Chia Bộ A = 23 biến & Bộ B = 26 biến)
+Dựa thẳng vào 5 hình EDA ở Bước 2, từ 7 cột gốc còn lại nhóm chế biến ra 3 nhóm đặc trưng:
+1. **Nhóm Lịch & Chu kỳ (`8` cột — từ Hình EDA 2, 3, 4):** `hour`, `day_of_week`, `month`, `is_weekend`, `is_holiday` (phủ đủ 24h cho 53 ngày lễ), `is_rush_hour` (tương tác 7–9h / 16–18h ngày làm việc), và cặp vòng tròn `hour_sin`, `hour_cos`. *(Chủ động bỏ cột `year` vì tập Test là năm 2018 mới tinh chưa từng xuất hiện trong tập Train 2012–2017, mô hình cây không ngoại suy được năm mới)*.
+2. **Nhóm Thời tiết (`15` cột — từ Hình EDA 3):** 4 cột số (`temp_c`, `rain_1h`, `snow_1h`, `clouds_all`) + 11 cột nhị phân `0/1` (`wm_Clear` $\rightarrow$ `wm_Thunderstorm`) dùng **One-Hot Encoding** từ `weather_main` *(không dùng `Label Encoding` gán 1, 2, 3 để tránh ép thứ tự lớn bé giả tạo; bỏ cột `weather_description` 38 nhãn để tránh đa cộng tuyến)*.
+   * 👉 **Gom Nhóm 1 + Nhóm 2 = Bộ đặc trưng A (`23` biến):** Dùng cho kịch bản dự báo dài hạn trước nhiều ngày và cho phần mềm Demo.
+3. **Nhóm Đặc trưng Trễ (`3` cột — từ Hình EDA 5, tạo tại `Cell 4` của `Note 02`):** Sinh ra từ quá khứ của chính cột `traffic_volume` bằng cách kéo tụt dòng trên lưới giờ liên tục `52.551` giờ:
+   * **`lag_1h = traffic_volume.shift(1)`:** Cầm cả cột `traffic_volume` kéo tụt xuống **1 dòng** $\rightarrow$ ví dụ tại dòng `03/10/2012 09:00` (`5.471` xe), ô `lag_1h` nhận giá trị `6.511` xe (số xe lúc `08:00` liền trước, $y_{t-1}$). Nếu giờ liền trước mất điện (như `11:00 = NaN`) thì lúc `12:00` ô `lag_1h` nhận `NaN` để lọc bỏ an toàn.
+   * **`lag_24h = traffic_volume.shift(24)`:** Kéo cột `traffic_volume` tụt xuống **24 dòng** $\rightarrow$ tại dòng `03/10/2012 09:00`, ô `lag_24h` nhận `5.545` xe (đúng số xe lúc `09:00` sáng hôm qua `02/10`, $y_{t-24}$).
+   * **`roll_3h = traffic_volume.shift(1).rolling(3).mean()`:** Đầu tiên `.shift(1)` lùi về giờ liền trước (loại bỏ hoàn toàn đáp án $y_t$ đang cần đoán!), sau đó `.rolling(3).mean()` lấy **trung bình cộng của 3 giờ liên tiếp ngay trước đó** $(y_{t-3} + y_{t-2} + y_{t-1}) / 3$ (ví dụ có 3 giờ liên tiếp `12h: 5.097`, `13h: 4.887`, `14h: 5.337` $\rightarrow$ tại dòng `15:00`, `roll_3h = (5.097 + 4.887 + 5.337)/3 = 5.107` xe, giúp làm mượt nhiễu ngẫu nhiên).
+   * 👉 **Gom Bộ A + Nhóm 3 = Bộ đặc trưng B (`26` biến):** Dùng cho kịch bản cảnh báo ngắn hạn trước 1 giờ trên đường cao tốc.
+
+### Kiểm chứng hiệu quả Tạo đặc trưng bằng Hình Ma trận tương quan (`Cuối Note 02`):
+![Hình tương quan các đặc trưng mới tạo](figures/fig_feature_correlation.png)
+* Nhìn biểu đồ thanh bên phải: Trước khi chế biến (ở Hình EDA 5), biến mạnh nhất chỉ đạt `+0,35` (`hour`). Sau khi chế biến ở Note 2, chúng ta có **`lag_1h` (`+0,91`)**, **`lag_24h` (`+0,86`)**, **`hour_cos` (`−0,77`)**, **`roll_3h` (`+0,76`)**, **`is_rush_hour` (`+0,53`)** — tín hiệu dự báo mạnh gấp 2 đến gần 3 lần ban đầu!
+
+---
+
+## 4.2. CẦU NỐI TRƯỚC KHI VÀO MODEL: Tại sao phải xuất ra CẢ 2 FILE `clean_data.parquet` và `clean_data.json`? Hai file đó có ý nghĩa gì?
+*(Đây là mắt xích bàn giao cực kỳ quan trọng giữa bước Tiền xử lý [Note 2] sang bước Mô hình hóa [Note 3] và Big Data [Note 4]!)*
+
+Khi làm sạch và tạo xong đặc trưng ở Note 2, dữ liệu đang nằm tạm trên thanh RAM của Note 2. Để Note 3, Note 4 và phần mềm Demo dùng được mà không phải chạy lại code làm sạch từ đầu, nhóm đóng gói xuất ra thư mục `data/processed/` **2 file đi đôi với nhau**:
+
+### 📦 File 1: [clean_data.parquet](file:///d:/big%20data/btl_nhóm_3/data/processed/clean_data.parquet) (`34.833 dòng × 30 cột`, nặng chỉ `0,5 MB`) — "Kho chứa bảng dữ liệu sạch"
+* **Ý nghĩa 30 cột bên trong nó:** Gồm `26 cột đặc trưng Bộ B` (đã chứa cả 23 cột Bộ A) + `1 cột đáp án traffic_volume` + `1 cột mốc thời gian date_time` (để Note 3 cắt Train/Test và vẽ đồ thị theo ngày) + `2 cột chữ gốc weather_main, holiday` (để cuối Note 3 thống kê xem trời mưa/tuyết sai số bao nhiêu).
+* **Tại sao BẮT BUỘC lưu định dạng `.parquet` mà KHÔNG lưu ra `.csv` hay `.xlsx` (Excel)?**
+  1. **Bảo toàn 100% kiểu dữ liệu (Schema):** Nếu xuất ra `.csv`, mọi thứ lại biến về văn bản thô — sang Note 3 đọc lại sẽ mất kiểu ngày giờ `datetime64`, và tệ nhất là chữ `"None"` trong cột `holiday` sẽ **lại bị pandas đọc nhầm thành `NaN` một lần nữa**! Còn `.parquet` lưu kèm kiểu dữ liệu nhị phân nên đọc lên ở Note 3 giữ nguyên vẹn `datetime64`, `int64`, `float64`, `str`!
+  2. **Lưu trữ hướng cột (Columnar Storage) & Nén siêu nhẹ:** `.parquet` nén dung lượng nhỏ hơn `.csv` từ **5 đến 10 lần** và cho phép đọc chọn lọc đúng các cột cần thiết (ví dụ ở Note 4 chỉ cần đọc 10/30 cột bằng `pd.read_parquet(..., columns=...)` mà không cần nạp cả 30 cột vào RAM!).
+  3. **Định dạng gốc chuẩn mực của Big Data (`Apache Spark`):** Ở Note 4, `spark.read.parquet(...)` đọc trực tiếp cấu trúc phân khối của Parquet với tốc độ tối đa mà không tốn thời gian dò kiểu dữ liệu (`inferSchema`) như CSV.
+
+### 📜 File 2: [clean_data.json](file:///d:/big%20data/btl_nhóm_3/data/processed/clean_data.json) (`88 dòng văn bản cấu hình`) — "Bản hợp đồng quy ước chung của cả nhóm"
+* **Bên trong chứa gì?** Lưu chính xác danh sách tên các cột thuộc từng nhóm (`CALENDAR_FEATURES`, `WEATHER_FEATURES`, `LAG_FEATURES`), danh sách 23 cột của **`FEATURES_A`**, 26 cột của **`FEATURES_B`** và mốc ngày chia tập **`"TEST_START": "2018-01-01"`**.
+* **Tại sao đã có file `.parquet` rồi mà vẫn phải xuất thêm file `.json` này?**
+  1. **Tách biệt Dữ liệu (`.parquet`) và Siêu dữ liệu cấu hình (`.json`):** File `.parquet` có 30 cột đứng chung một bảng, bản thân file `.parquet` không tự ghi chú cột nào thuộc Bộ A, cột nào thuộc Bộ B, cột nào là đáp án cấm đưa vào `X`!
+  2. **Chống sai sót khi làm việc nhóm & Triển khai Demo:** Nếu không có `clean_data.json`, người làm Note 3 và người viết App Demo phải tự ngồi liệt kê tay lại 23 tên cột Bộ A và 26 tên cột Bộ B — chỉ cần gõ sai chữ hoa/thường (`wm_clear` thay vì `wm_Clear`), đảo nhầm thứ tự cột (làm model dự báo sai bét!), hoặc cắt nhầm mốc ngày Train/Test là toàn bộ kết quả giữa các thành viên sẽ lệch nhau. Nhờ `clean_data.json`, mọi thành viên đọc chung **một nguồn quy ước duy nhất (Single Source of Truth)**!
+
+---
+
+# BƯỚC 5: CHIA DỮ LIỆU, ĐỐI SÁNH BỘ A vs BỘ B (5 MODEL) & TỐI ƯU THAM SỐ (`Đầu & Giữa Note 03`)
+
+## 5.1. Cách xử lý Chia dữ liệu: Tại sao dùng Cắt mốc thời gian + `TimeSeriesSplit` mà KHÔNG dùng Chia ngẫu nhiên hay `K-Fold`?
+1. **Chia Tập `Train` (`< 2018-01-01` = `28.353` dòng, 81,4%) và Tập `Test` (`>= 2018-01-01` = `6.480` dòng, 18,6%):**
+   * *Tại sao dùng cách này?* Mô phỏng đúng thực tế ngoài đời: học từ dữ liệu lịch sử 2012–2017 để dự báo cho tương lai năm 2018 chưa từng xảy ra.
+   * *Tại sao KHÔNG dùng chia ngẫu nhiên (`train_test_split` trộn đều)?* Vì trộn ngẫu nhiên sẽ cho máy học giờ `09:00` sáng năm 2015 (có chứa sẵn cột `lag_1h` là số xe lúc `08:00`!) rồi bắt máy "đoán" giờ `08:00` sáng năm 2015 $\rightarrow$ phạm lỗi **rò rỉ tương lai (`Data Leakage`)**!
+2. **Dùng `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=4)` ngay BÊN TRONG Tập `Train` để chọn bộ tham số tối ưu:**
+   * *Tại sao dùng cách này?* Khi dò 30 tổ hợp siêu tham số của XGBoost, ta tuyệt đối không được lấy đề thi thật cuối kỳ (`Test` năm 2018) ra chấm thử nhiều lần (lộ đề thi!). `TimeSeriesSplit(n_splits=4)` cắt tập Train 2012–2017 thành **4 vòng thi thử nối tiếp nhau** (luôn học quá khứ thi tương lai), chọn cấu hình tốt nhất rồi mới `refit` trên toàn bộ Train và chấm đúng 1 lần trên Test.
+   * *Tại sao KHÔNG dùng `K-Fold Cross-Validation` thông thường?* Vì `K-Fold` thường chia khúc rồi thay phiên lấy khúc sau (2015–2017) đi học để chấm trên khúc đầu (2012–2013) $\rightarrow$ lại lấy tương lai đoán quá khứ!
+
+---
+
+## 5.2. Thiết kế 5 Phương pháp trên cả Bộ A & Bộ B: Tại sao DÙNG 5 phương pháp này & Tại sao KHÔNG DÙNG các thuật toán khác?
+
+### A. Tại sao phải thử nghiệm song song cả Bộ A (23 biến) và Bộ B (26 biến)?
+* **Bộ A (23 biến Lịch & Thời tiết — không có biến trễ):** Dùng để trả lời câu hỏi *"Nếu dự báo trước nhiều ngày (hoặc trên App Demo khi người dùng chỉ chọn ngày giờ + thời tiết, không biết số xe 1h trước) thì mô hình nào gánh được?"* $\rightarrow$ Các mô hình tuyến tính thất bại (`MAE = 631` xe), nhưng **`XGBoost` vẫn đạt `MAE = 223,66` xe (`R² = 96,44%`)**!
+* **Bộ B (26 biến = Bộ A + `lag_1h, lag_24h, roll_3h`):** Phục vụ dự báo vận hành ngắn hạn tại trạm cảm biến, giúp giảm thêm **`36%–44%` sai số** trên toàn bộ các mô hình!
+
+### B. Cách xử lý và vai trò của 5 Phương pháp được chọn (Từ đơn giản nhất đến mạnh nhất):
+1. **`Seasonal Naive Baseline`:** Lấy thẳng cột `lag_24h` (lượng xe 24h trước) làm dự báo (`MAE = 568,37 xe`, `R² = 0,7251`). **Dùng làm mốc sàn tối thiểu** chứng minh giá trị gia tăng của học máy.
+2. **`Linear Regression` (`StandardScaler` + `LinearRegression`):** Lập phương trình cộng trừ bậc nhất tiêu chuẩn (`MAE = 631,51` xe ở Bộ A $\rightarrow$ `353,76` xe ở Bộ B) để làm đại diện cơ bản cho họ mô hình tuyến tính.
+3. **`Ridge Regression` (`StandardScaler` + `Ridge(alpha=10.0)`):** Gắn thêm lực phanh điều chuẩn `L2` (`MAE = 353,61 xe` ở Bộ B) để khắc phục hiện tượng đa cộng tuyến nổ hệ số giữa 11 cột `wm_*` và cặp `lag_1h` – `roll_3h`.
+4. **`Random Forest` (`100` cây song song, `max_depth=12`, `max_features=1/3`):** Trồng 100 cây quyết định độc lập xét `1/3` số cột ở mỗi nhánh rồi lấy trung bình cộng (`MAE = 229,66` xe ở Bộ A $\rightarrow$ `143,95` xe ở Bộ B). **Đại diện cho nhóm Cây kết hợp song song (`Bagging`)** bắt tốt tương tác phi tuyến.
+5. **`XGBoost` (Cây tăng cường nối tiếp `Boosting`):** Xếp hàng trăm cây nối đuôi nhau sửa phần dư sai số (`MAE = 143,49 xe` $\rightarrow$ sau khi tinh chỉnh bằng `RandomizedSearchCV` ra bộ tham số **`300 cây, sâu 8, lr=0.05, subsample=0.8, colsample=0.8`**, sai số giảm xuống còn **`138,88 xe`**, `MAPE = 5,61%`, giải thích được **`98,79%`** biến động giao thông!).
+
+### C. Tại sao KHÔNG DÙNG các thuật toán khác (`ARIMA`, `KNN/SVM`, `Deep Learning LSTM`)?
+* ❌ **Không dùng `ARIMA / SARIMA`:** Vì ARIMA đòi hỏi chuỗi thời gian phải liên tục đều đặn 100%, trong khi dữ liệu của ta bị khuyết đứt quãng tới `11.987` giờ (có đoạn mất liền hàng tháng trời) và ARIMA rất yếu khi phải xử lý cùng lúc 23 biến thời tiết/lịch/tương tác.
+* ❌ **Không dùng `KNN` hay `SVM (SVR)`:** Vì thuật toán tính khoảng cách giữa từng cặp dòng quá nặng nề khi lên hàng chục nghìn – hàng triệu dòng, và khoảng cách hình học bị nhiễu khi trộn 14 cột nhị phân `0/1` với các cột số thực.
+* ❌ **Không dùng `Deep Learning (LSTM / GRU)`:** Chuỗi bị đứt quãng 22,81% làm gãy mạch cửa sổ chuỗi liên tiếp của LSTM; hơn nữa trên dữ liệu dạng bảng quy mô ~35 nghìn dòng đã được chế biến đặc trưng kỹ lưỡng (`hour_cos`, `lag_1h`, `lag_24h`, `roll_3h`, `is_rush_hour`), `XGBoost` đạt độ chính xác vượt trội (`R² = 98,79%`), huấn luyện nhanh gấp hàng chục lần trên CPU thường và giải thích rõ ràng độ quan trọng từng biến!
+
+---
+
+# BƯỚC 6: ĐÁNH GIÁ KẾT QUẢ, ĐỌC HÌNH PHÂN TÍCH LỖI 4 CHIỀU & LƯU 2 MODEL (`Cuối Note 03`)
+
+1. **Tại sao đánh giá bằng đúng 4 độ đo Hồi quy (`MAE, RMSE, MAPE, R²`) và lọc $y_i > 100$ khi tính `MAPE`?**
+   * Vì bài toán dự báo lưu lượng là **Hồi quy (đoán con số xe liên tục)** chứ không phải Phân loại: `MAE` (`138,88` xe) đo sai số tuyệt đối trung bình dễ hiểu nhất; `RMSE` (`217,05` xe) phạt nặng các pha đoán trật đột biến lớn; `MAPE` (`5,61%`, tính trên các giờ có $y_i > 100$ xe/giờ để tránh chia cho mẫu số gần 0 lúc nửa đêm làm nổ phần trăm ảo) đo sai số tương đối; và `R²` (`0,9879`) đo tỷ lệ biến động mà mô hình nắm bắt được.
+
+2. **Nhìn Hình Dự báo 7 ngày liên tiếp đầu năm 2018:**
+![Dự báo 7 ngày liên tiếp năm 2018](figures/note03_forecast_7_days.png)
+* Đường màu đen liền nét là số xe thực tế từ `01/01/2018` đến `08/01/2018`. Ngay ngày đầu năm `01/01` là nghỉ Tết Dương lịch nên lưu lượng thực tế thấp hẳn xuống; mô hình `Baseline` bị lệch pha nặng suốt ngày `01/01` và `02/01`, trong khi đường đứt nét của **`XGBoost (Tuned)`** ôm sát sạt từng đỉnh cao điểm sáng/chiều và đáy ban đêm của đường thực tế!
+
+3. **Nhìn Hình & Bảng Phân tích sai số 4 chiều để hiểu giới hạn thực tế của mô hình:**
+![Phân tích sai số theo giờ và thời tiết](figures/note03_error_analysis_hour_weather.png)
+* **Chiều 1 — Theo khung giờ (Hình trái):** Ban đêm (`1h–4h` sáng) đoán lệch cực ít (`MAE` chỉ `30–50` xe); sai số tăng vào giờ cao điểm đi làm/tan tầm (`7h`, `15h–17h`) và tối muộn (`21h–23h`).
+* **Chiều 2 — Theo thời tiết (Hình phải):** Trời **Tuyết rơi (`Snow`)** có sai số lớn nhất do băng tuyết làm dòng xe giảm tốc đột ngột.
+* **Chiều 3 — Ngày lễ vs Ngày thường:** Ngày lễ (`164` giờ, `MAE = 151,05` xe) có sai số nhỉnh hơn ngày thường (`6.316` giờ, `MAE = 138,56` xe) do mẫu lễ ít và tính đặc thù từng kỳ nghỉ.
+* **Chiều 4 — Top 5 giờ sai số lớn nhất:** Rơi vào các sự kiện bất khả kháng không có trong dữ liệu đầu vào (như tai nạn/đóng làn trưa `21/05/2018 13:00` hoặc dòng xe tan sự kiện đêm cuối tuần lúc `23:00`).
+* **Lưu 2 gói Model `.joblib` kèm ngưỡng cảnh báo `P50 = 3.356` và `P85 = 5.484` xe/giờ (tính từ `y_train`):** Vừa lưu **`best_model_xgboost.joblib`** (Bộ B — vận hành thực tế trạm đo), vừa lưu **`demo_model_xgb_A.joblib`** (Bộ A — phục vụ App Demo Gradio khi người dùng không có số liệu xe giờ trước)!
+
+---
+
+# BƯỚC 7: THỰC NGHIỆM DỮ LIỆU LỚN (`PySpark MLlib` vs `pandas/scikit-learn` — `Note 04`)
+
+### 7.1. Tại sao phải làm bước này và thiết kế xử lý như thế nào?
+* File sạch của 1 trạm đo chỉ có `34.833` dòng (`0,19 MB`), chưa đủ lớn để thấy sự khác biệt giữa xử lý đơn máy và xử lý phân tán Big Data.
+* Nhóm giả lập kịch bản gom dữ liệu từ hàng chục trạm cảm biến toàn thành phố bằng cách **nhân bản dữ liệu ở 4 mức quy mô: `x1` (`35K` dòng), `x10` (`348K` dòng), `x30` (`1,04M` dòng), `x60` (`2,09M` dòng — `58,56 MB`)** có cộng thêm nhiễu ngẫu nhiên nhỏ hợp lý để các bản sao không bị trùng khít giả tạo.
+* Cả hai phe — **`pandas/scikit-learn`** (đơn máy) và **`PySpark MLlib` (`local[*]`)** (phân tán giả lập trên 12 luồng CPU) — đều bị khóa chặt cùng một bài toán: huấn luyện **`RandomForest` 50 cây, độ sâu 10, xét 3/9 đặc trưng ở mỗi nút, chạy lặp 3 lần** và dùng luồng ngầm đo **Đỉnh RAM** mỗi `0,1` giây.
+
+### 7.2. Nhìn Hình Kết quả Benchmark để rút ra bài học cốt lõi của môn Big Data:
+![Kết quả Benchmark PySpark vs pandas/scikit-learn](figures/fig_res_benchmark.png)
+
+1. **Nhìn khung (a) & (b) — Về Thời gian chạy:**
+   * Trên 1 chiếc laptop đơn lẻ với dữ liệu tối đa `58,56 MB` (nằm quá dư dả trong thanh RAM 8 GB), **`pandas/scikit-learn` luôn chạy nhanh hơn `PySpark`** (`0,17s` vs `9,19s` ở `x1`; `40,31s` vs `135,35s` ở `x60`). *Nguyên nhân:* `PySpark` phải tốn **chi phí điều phối cố định (`Overhead`)** cho việc lập đồ thị kế hoạch `DAG`, chia 12 phân vùng `Partitions`, gom cột `VectorAssembler` và giao tiếp với Máy ảo Java `JVM`.
+   * **Tuy nhiên, hãy nhìn độ dốc mở rộng (`Scalability`):** Khi dữ liệu tăng **60 lần (`x1 → x60`)**, thời gian chạy của `pandas/sklearn` bị phình gấp **`242,8 lần`**, trong khi thời gian của `PySpark` chỉ tăng có **`14,7 lần`** (khoảng cách từ chỗ chậm hơn `55,36 lần` rút ngắn nhanh chóng xuống chỉ còn `2,42 – 3,36 lần`)!
+2. **Nhìn khung (c) — Về Bộ nhớ RAM & Giới hạn sinh tử:**
+   * `Spark JVM` chiếm nhiều RAM nền hơn (`2,67 GB` so với `1,23 GB` của Python ở mức `x60`).
+   * **Khi nào dùng cái nào?**
+     * Với dữ liệu vừa và nhỏ nằm gọn trong RAM của 1 máy tính (như bài toán 1 trạm đo của đề tài): **Dùng `pandas/scikit-learn` (và `XGBoost`)** vì nhanh, gọn, không tốn chi phí điều phối.
+     * Khi dữ liệu thực tế mở rộng lên hàng nghìn trạm đo cả nước (hàng trăm triệu – hàng tỷ dòng, dung lượng hàng trăm GB vượt quá RAM của 1 máy đơn khiến `pandas/sklearn` bị tràn bộ nhớ `OutOfMemory` và sập hoàn toàn): **Bắt buộc phải dùng `PySpark`** nhờ khả năng tràn tạm xuống ổ cứng (`Disk Spill`) và chia tải chạy song song trên cụm hàng chục máy chủ!

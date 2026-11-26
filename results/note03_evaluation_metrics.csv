@@ -1,5 +1,10 @@
-﻿Model,MAE,RMSE,MAPE (%),R2,Precision,Recall,F1
-XGBoost,143.49,221.75,5.84,0.9873,0.9294,0.9327,0.931
-Random Forest,213.64,305.45,10.67,0.976,0.9258,0.8916,0.9084
-Ridge Regression,353.61,475.92,21.17,0.9416,0.8267,0.8041,0.8152
-Baseline (Seasonal Naive),568.37,1032.94,25.08,0.7251,0.7154,0.7141,0.7148
+﻿Bộ đặc trưng,Model,MAE,RMSE,MAPE (%),R2
+Baseline,Seasonal Naive (lag_24h),568.37,1032.94,25.08,0.7251
+Bộ A (23 biến - Lịch & Thời tiết),Linear Regression,631.51,858.01,43.08,0.8103
+Bộ A (23 biến - Lịch & Thời tiết),Ridge Regression,631.54,858.02,43.1,0.8103
+Bộ A (23 biến - Lịch & Thời tiết),Random Forest,229.66,381.66,10.08,0.9625
+Bộ A (23 biến - Lịch & Thời tiết),XGBoost,223.66,371.72,10.05,0.9644
+Bộ B (26 biến - Bộ A + Lag),Linear Regression,353.76,475.66,21.18,0.9417
+Bộ B (26 biến - Bộ A + Lag),Ridge Regression,353.61,475.92,21.17,0.9416
+Bộ B (26 biến - Bộ A + Lag),Random Forest,143.95,223.65,5.83,0.9871
+Bộ B (26 biến - Bộ A + Lag),XGBoost,143.49,221.75,5.84,0.9873
