@@ -1,13 +1,13 @@
 # Cẩm Nang Bóc Tách Toàn Bộ Code, Biểu Đồ & Tham Số Dự Án Từ A Đến Z
-## (Đủ 4 Notebooks: Phân Tích Dữ Liệu → Phân Tích 5 Hình EDA → Tiền Xử Lý & Tạo Đặc Trưng → Thiết Kế Model & Đánh Giá Bộ Tham Số → Thí Nghiệm PySpark Big Data + Toàn Bộ Câu Hỏi Vấn Đáp)
+## (Đủ 4 Notebooks + App Demo Gradio: Phân Tích Dữ Liệu → 5 Hình EDA → Tiền Xử Lý & Tạo Đặc Trưng → Thiết Kế 5 Model & Tối Ưu Tham Số → Thí Nghiệm PySpark Big Data → Giao Diện Web Demo + Toàn Bộ Câu Hỏi Vấn Đáp)
 
 > **Cách kết hợp 2 cuốn cẩm nang để đi vấn đáp đạt điểm tối đa:**
-> 1. **[ban_chat_du_an_tu_A_den_Z.md](file:///d:/big%20data/btl_nhóm_3/ban_chat_du_an_tu_A_den_Z.md):** Giúp bạn nắm từ điển 55 thuật ngữ cơ bản và hiểu **bản chất lý thuyết / tư duy toán học** bằng ngôn ngữ đời thường.
-> 2. **File này ([giai_thich_toan_bo_code_4_notebooks.md](file:///d:/big%20data/btl_nhóm_3/giai_thich_toan_bo_code_4_notebooks.md)):** Bóc tách **từng dòng code, từng con số đầu ra, từng biểu đồ hình ảnh, lý do chọn từng bộ tham số và bộ câu hỏi vấn đáp xoáy sâu** cho cả 4 file `note_01` $\rightarrow$ `note_04`. Đọc xong 2 file này, thầy/cô hỏi vào bất kỳ góc nào của dự án bạn đều trả lời trôi chảy!
+> 1. **[ban_chat_du_an_tu_A_den_Z.md](file:///d:/big%20data/btl_nhóm_3/ban_chat_du_an_tu_A_den_Z.md):** Giúp bạn nắm bảng thuật ngữ cơ bản và hiểu **bản chất lý thuyết / tư duy nhân – quả từ Bước 1 đến Bước 8** bằng ngôn ngữ đời thường.
+> 2. **File này ([giai_thich_toan_bo_code_4_notebooks.md](file:///d:/big%20data/btl_nhóm_3/giai_thich_toan_bo_code_4_notebooks.md)):** Bóc tách **từng dòng code, từng con số đầu ra, từng biểu đồ hình ảnh, lý do chọn từng bộ tham số và bộ câu hỏi vấn đáp xoáy sâu** cho cả 4 file `note_01` $\rightarrow$ `note_04` và `demo/app.py`. Đọc xong 2 file này, thầy/cô hỏi vào bất kỳ dòng code nào của dự án bạn đều trả lời trôi chảy!
 
 ---
 
-## SƠ ĐỒ TỔNG THỂ LUỒNG DỮ LIỆU & KẾT NỐI GIỮA 4 FILE CODE
+## SƠ ĐỒ TỔNG THỂ LUỒNG DỮ LIỆU & KẾT NỐI GIỮA 5 FILE CODE
 
 ```mermaid
 flowchart TD
@@ -19,11 +19,12 @@ flowchart TD
     N2 -->|"Xuất ma trận tương quan"| FIG2["figures/fig_feature_correlation.png"]
 
     PQ --> N3["PHẦN 3: code/note_03.ipynb (7 cells gọn chuẩn)<br/>Ablation Bộ A vs Bộ B (5 phương pháp)<br/>RandomizedSearchCV + TimeSeriesSplit(4)"]
-    PQ --> N4["PHẦN 4: code/note_04.ipynb<br/>Nhân bản x1, x10, x30, x60 (2,09M dòng)<br/>Đua tốc độ & RAM: PySpark vs Scikit-learn"]
+    PQ --> N4["PHẦN 4: code/note_04.ipynb (12 cells)<br/>Nhân bản x1, x10, x30, x60 (2,09M dòng)<br/>Đua tốc độ & RAM: PySpark vs Scikit-learn"]
 
-    N3 -->|"Lưu 2 model (Bộ B & Demo Bộ A)"| MOD["models/best_model_xgboost.joblib<br/>models/demo_model_xgb_A.joblib"]
+    N3 -->|"Lưu gói model (.joblib) + P50, P85"| MOD["models/best_model_xgboost.joblib<br/>models/demo_model_xgb_A.joblib & demo_model.joblib"]
     N3 -->|"Lưu 2 bảng CSV & 3 hình đánh giá"| OUT3["results/note03_evaluation_metrics.csv<br/>results/table_4_2_xgboost_tuning.csv<br/>figures/note03_*.png & hinh_4_2_*.png"]
     N4 -->|"Lưu 3 bảng CSV & hình Benchmark"| OUT4["results/benchmark*.csv<br/>figures/fig_res_benchmark.png"]
+    MOD --> DEMO["PHẦN 5: demo/app.py (Gradio Web UI)<br/>6 đầu vào -> Tự tính 4 biến phái sinh -> Cảnh báo 3 mức<br/>Xuất results/demo_scenarios_log.csv"]
 ```
 
 ---
@@ -317,28 +318,68 @@ search.fit(train_df[FEATURES_B], y_train)
 
 ---
 
-## 3.4. Phân tích 3 Biểu Đồ Đánh Giá, Phân Tích Lỗi 4 Chiều & Lưu 2 Model `.joblib` (Cell 4 → Cell 7)
+## 3.4. Phân tích Từng Dòng Code của 3 Biểu Đồ Đánh Giá, Phân Tích Lỗi 4 Chiều & Lưu Model (Cell 4 → Cell 7)
 
-### 📊 Cell 4 — Biểu đồ Dự báo 7 ngày liên tiếp đầu năm 2018 ([note03_forecast_7_days.png](file:///d:/big%20data/btl_nhóm_3/figures/note03_forecast_7_days.png))
-* Vẽ 7 ngày đầu tập Test (`2018-01-01` $\rightarrow$ `2018-01-08`). Ngay ngày `01/01/2018` là **nghỉ Tết Dương lịch (`New Years Day`)** nên đường đen thực tế thấp hẳn xuống; `Baseline (lag_24h)` bị trật nhịp nặng nề sang tận ngày đi làm `02/01`, trong khi đường **`XGBoost (Tuned)`** bám khít từng đỉnh cao điểm sáng/chiều và đáy ban đêm!
+### 📊 Cell 4 — Code & Cách đọc Biểu đồ Dự báo 7 ngày liên tiếp ([note03_forecast_7_days.png](file:///d:/big%20data/btl_nhóm_3/figures/note03_forecast_7_days.png))
+```python
+mask_7d = test_df["date_time"] < (test_df["date_time"].iloc[0] + pd.Timedelta(days=7))
+dt_7d = test_df.loc[mask_7d, "date_time"]
 
-### 📊 Cell 5 — Biểu đồ Top 15 Đặc trưng quan trọng nhất ([hinh_4_2_feature_importance.png](file:///d:/big%20data/btl_nhóm_3/figures/hinh_4_2_feature_importance.png))
-* Tỷ trọng đóng góp theo `Gain` của `best_xgb_B` (nhờ có `colsample_bytree = 0.8` nên phân bổ rất hài hòa):
-  1. **`hour_cos`: `52,83%`** *(Đứng số 1 — khẳng định giá trị to lớn của bước mã hóa chu kỳ lượng giác ở Note 2!)*
-  2. **`lag_1h`: `25,16%`** *(Quán tính lưu lượng giờ liền trước)*
-  3. **`hour`: `7,18%`**, **`lag_24h`: `3,70%`**, **`is_rush_hour`: `2,66%`**, **`hour_sin`: `2,05%`**, **`roll_3h`: `1,96%`**, **`is_weekend`: `1,43%`**, **`day_of_week`: `1,25%`**, **`is_holiday`: `0,73%`**...
+plt.plot(dt_7d, y_test[mask_7d], label="Thực tế (Actual)", color="black", linewidth=2.0)
+for ten in ["Baseline (Seasonal Naive)", "Ridge Regression", "Random Forest", "XGBoost (Tuned)"]:
+    plt.plot(dt_7d, predictions_B[ten][mask_7d], label=ten, linestyle="--", linewidth=1.4, alpha=0.85)
+```
+* **Giải thích code & Cách đọc hình:**
+  * `test_df["date_time"].iloc[0] + pd.Timedelta(days=7)`: Lọc đúng 7 ngày đầu tiên của tập Test (`2018-01-01` $\rightarrow$ `2018-01-08`) để đồ thị không bị dày đặc chữ, nhìn rõ từng đỉnh sáng – chiều.
+  * Ngày `01/01/2018` là **nghỉ Tết Dương lịch (`New Years Day`)** nên đường đen thực tế thấp hẳn xuống; `Baseline (lag_24h)` bị trật nhịp nặng nề sang tận ngày đi làm `02/01` (bê lượng xe vắng của ngày lễ sang đoán cho ngày đi làm!), trong khi đường **`XGBoost (Tuned)`** bám khít từng đỉnh cao điểm sáng/chiều và đáy ban đêm!
 
-### 📊 Cell 6 — Phân tích lỗi chuyên sâu đủ 4 chiều (Khớp 100% Mục 3.5.4 & 5.2 Báo cáo)
-1. **Theo khung giờ (`0–23h`, hình trái [note03_error_analysis_hour_weather.png](file:///d:/big%20data/btl_nhóm_3/figures/note03_error_analysis_hour_weather.png)):** Ban đêm `1h–4h` sáng sai số cực nhỏ (`MAE ~ 30–50` xe); tăng lên ở giờ cao điểm sáng/chiều (`7h`, `15h–17h`) và tối muộn (`21h–23h`).
-2. **Theo thời tiết (`weather_main`, hình phải):** Trạng thái **Tuyết rơi (`Snow`)** có sai số lớn nhất do băng tuyết làm thay đổi tốc độ dòng xe đột ngột, trong khi trời quang (`Clear`) và mây (`Clouds`) có sai số thấp ổn định.
-3. **Theo Ngày lễ vs Ngày thường:** Ngày thường (`6.316` mẫu) có `MAE = 138,56` xe; Ngày lễ (`164` mẫu) có `MAE = 151,05` xe (nhỉnh hơn nhẹ do số lượng ngày lễ ít và hành vi du lịch từng dịp lễ khác nhau).
-4. **Top 5 mốc giờ sai số lớn nhất năm 2018:** Lớn nhất là trưa Thứ Hai `2018-05-21 13:00` (thực tế sụt đột ngột còn `2.040` xe trong khi dự báo `4.838` xe, lệch `2.798` xe — dấu hiệu sự cố tai nạn/đóng làn cục bộ trên cao tốc I-94), kế đến là chiều `2018-01-17 15:00–16:00` và tối Thứ Sáu/Thứ Bảy `2018-09-28, 29 lúc 23:00` (tan sự kiện thể thao/hòa nhạc đêm cuối tuần không có trong dữ liệu đầu vào).
+### 📊 Cell 5 — Code & Cách đọc Top 15 Đặc trưng quan trọng nhất ([hinh_4_2_feature_importance.png](file:///d:/big%20data/btl_nhóm_3/figures/hinh_4_2_feature_importance.png))
+```python
+fi = pd.Series(best_xgb_B.feature_importances_, index=FEATURES_B).sort_values().tail(15)
+plt.barh(fi.index, fi.values, color="#2b5c8f")
+```
+* **Giải thích code & Ý nghĩa:**
+  * `best_xgb_B.feature_importances_` trích xuất tỷ trọng đóng góp theo **`Gain`** (mức giảm sai số bình phương trung bình mỗi khi cây dùng biến đó để cắt nhánh), gắn tên cột `FEATURES_B`, sắp xếp tăng dần rồi lấy `.tail(15)` (Top 15 biến lớn nhất) để vẽ biểu đồ thanh ngang từ dưới lên trên:
+    1. **`hour_cos`: `52,83%`** *(Đứng số 1 — khẳng định giá trị to lớn của bước mã hóa chu kỳ lượng giác ở Note 2!)*
+    2. **`lag_1h`: `25,16%`** *(Quán tính lưu lượng giờ liền trước)*
+    3. **`hour`: `7,18%`**, **`lag_24h`: `3,70%`**, **`is_rush_hour`: `2,66%`**, **`hour_sin`: `2,05%`**, **`roll_3h`: `1,96%`**, **`is_weekend`: `1,43%`**, **`day_of_week`: `1,25%`**, **`is_holiday`: `0,73%`**...
 
-### 💾 Cell 7 — Đóng gói 2 file `.joblib` phục vụ Lưu trữ & Ứng dụng Demo (Khớp Mục 3.7.2 & 4.5 Báo cáo)
-* Tính 2 ngưỡng phân tầng lưu lượng trực tiếp trên `y_train` (không đụng tập Test): **`P50 = 3.356` xe/giờ** (*Thông thoáng* $\le P50 <$ *Đông đúc*) và **`P85 = 5.484` xe/giờ** ($\ge P85$: *Nguy cơ ùn tắc cao*).
-* Lưu đồng thời **2 gói model**:
-  1. [models/best_model_xgboost.joblib](file:///d:/big%20data/btl_nhóm_3/models/best_model_xgboost.joblib): Mô hình `XGBoost (Bộ B)` tốt nhất (`MAE = 138,88`, `R² = 0,9879`) cho kịch bản vận hành trạm đo thời gian thực.
-  2. [models/demo_model_xgb_A.joblib](file:///d:/big%20data/btl_nhóm_3/models/demo_model_xgb_A.joblib): Mô hình `XGBoost (Bộ A)` đã tinh chỉnh (`MAE = 224,36`, `MAPE = 9,86%`, `R² = 0,9646`) kèm `FEATURES_A`, `p50`, `p85` để App Demo Gradio cho phép người dùng nhập ngày giờ + thời tiết bất kỳ mà không cần nhập biến trễ!
+### 📊 Cell 6 — Code & Số liệu Phân tích lỗi chuyên sâu đủ 4 chiều (Khớp 100% Mục 3.5.4 & 5.2 Báo cáo)
+```python
+err_df["abs_error"] = np.abs(y_test - pred_best_B)
+err_df["sq_error"] = (y_test - pred_best_B) ** 2
+
+def bang_sai_so(col):
+    return (err_df.groupby(col, as_index=False)
+            .agg(so_mau=("abs_error", "size"),
+                 MAE=("abs_error", "mean"),
+                 RMSE=("sq_error", lambda s: float(np.sqrt(np.mean(s))))).round(2))
+```
+* **Giải thích hàm `bang_sai_so(col)`:** Viết 1 hàm dùng chung cực gọn cho cả 3 chiều phân nhóm (`hour`, `is_holiday`, `weather_main`) để tính số mẫu, trung bình sai số tuyệt đối (`MAE`) và căn bậc hai trung bình bình phương sai số (`RMSE`):
+  1. **Chiều 1 — Theo khung giờ (`0–23h`, hình trái [note03_error_analysis_hour_weather.png](file:///d:/big%20data/btl_nhóm_3/figures/note03_error_analysis_hour_weather.png)):** Ban đêm `1h–4h` sáng sai số cực nhỏ (`MAE ~ 30–50` xe); tăng lên ở giờ cao điểm sáng/chiều (`7h`, `15h–17h`) và tối muộn (`21h–23h`).
+  2. **Chiều 2 — Theo thời tiết (`weather_main`, hình phải):** Trạng thái **Tuyết rơi (`Snow`)** có sai số lớn nhất do băng tuyết làm thay đổi tốc độ dòng xe đột ngột, trong khi trời quang (`Clear`) và mây (`Clouds`) có sai số thấp ổn định.
+  3. **Chiều 3 — Theo Ngày lễ vs Ngày thường:** Ngày thường (`6.316` mẫu) đạt `MAE = 138,56` xe (`RMSE = 217,57`); Ngày lễ (`164` mẫu) có `MAE = 151,05` xe (`RMSE = 196,31`).
+  4. **Chiều 4 — Top 5 mốc giờ sai số lớn nhất năm 2018 (`err_df.sort_values("abs_error", ascending=False).head(5)`):** Lớn nhất là trưa Thứ Hai `2018-05-21 13:00` (thực tế sụt đột ngột còn `2.040` xe trong khi dự báo `4.838` xe, lệch `2.798` xe — dấu hiệu sự cố tai nạn/đóng làn cục bộ trên cao tốc I-94), kế đến là chiều `2018-01-17 15:00–16:00` và tối Thứ Sáu/Thứ Bảy `2018-09-28, 29 lúc 23:00` (tan sự kiện thể thao/hòa nhạc đêm cuối tuần không có trong dữ liệu đầu vào).
+
+### 💾 Cell 7 — Code Đóng gói `.joblib` & Ngưỡng cảnh báo `P50, P85` (Khớp Mục 3.7.2 & 4.5 Báo cáo)
+```python
+p50 = float(np.percentile(y_train, 50))  # -> 3,356 xe/giờ
+p85 = float(np.percentile(y_train, 85))  # -> 5,484 xe/giờ
+
+best_xgb_A = XGBRegressor(**search.best_params_, random_state=SEED, n_jobs=-1)
+best_xgb_A.fit(train_df[FEATURES_A], y_train)
+```
+* **Giải thích chi tiết:**
+  * **Tại sao tính `p50` và `p85` trên `y_train` mà KHÔNG tính trên `y_test`?** Để tuân thủ nghiêm ngặt quy tắc chống rò rỉ dữ liệu: ngưỡng cảnh báo vận hành năm 2018 chỉ được phép xác lập từ phân phối lịch sử 2012–2017 (`y_train`).
+  * `**search.best_params_`: Giải nén tự động 5 siêu tham số vô địch vừa tìm được ở Cell 3 để huấn luyện thêm mô hình Bộ A (`best_xgb_A`: `MAE = 224,36`, `MAPE = 9,86%`, `R² = 0,9646`), rồi dùng `joblib.dump(...)` đóng gói cả `model`, `features`, `p50`, `p85`, `metrics` vào thư mục `models/`.
+
+---
+
+## 3.5. Bộ câu hỏi vấn đáp xoáy sâu riêng cho Phần 3 (`note_03.ipynb` — Chương 5 Thảo luận)
+* **Hỏi 1:** *Tại sao trên Bộ A (không có biến trễ), `Linear Regression` và `Ridge` lại có `MAE = 631,5` xe — tệ hơn cả mô hình không cần học máy `Seasonal Naive Baseline` (`MAE = 568,37` xe)?*
+  > **Đáp:** Dạ, vì phương trình tuyến tính chỉ cộng đại số từng biến rời rạc ($\beta_1 \cdot \text{hour} + \beta_2 \cdot \text{is\_weekend} + \dots$), không tự nhân chéo để hiểu rằng "8h sáng Thứ Ba đông gấp 3 lần 8h sáng Chủ Nhật"! Trong khi đó `Seasonal Naive` lấy lưu lượng cùng giờ hôm trước (`lag_24h`) nên đã ăn sẵn hình dáng đường cong 24 giờ của 5/7 ngày trong tuần. Chỉ khi dùng mô hình Cây (`Random Forest`, `XGBoost`), các nhánh cây tự động bắt được tương tác phi tuyến Giờ × Thứ × Thời tiết nên sai số trên Bộ A lập tức giảm gần 3 lần xuống **`223,66` xe**!
+* **Hỏi 2:** *Tại sao khi chuyển từ Bộ A sang Bộ B (thêm `lag_1h, lag_24h, roll_3h`), khoảng cách chênh lệch giữa Hồi quy tuyến tính và XGBoost lại thu hẹp lại?*
+  > **Đáp:** Vì dòng giao thông trên cao tốc có quán tính vật lý rất lớn: bản thân biến `lag_1h` đã có tương quan tuyến tính trực tiếp cực cao (`r = +0,91`) với `traffic_volume`, giúp `Linear / Ridge` nhảy vọt từ `R² = 0,81` lên `0,94`. Tuy nhiên `XGBoost` vẫn bỏ xa `Ridge` hơn 210 xe MAE (`138,88` vs `353,61`) nhờ khả năng điều chỉnh phi tuyến tại các điểm gãy lên/xuống giờ cao điểm, ngày lễ và bão tuyết!
 
 ---
 
@@ -401,28 +442,27 @@ def lay_mau_ram():
 
 ---
 
-## 4.3. Phân tích Kết quả Thực nghiệm & Cách Đọc Hình `fig_res_benchmark.png` (Cell 8 → Cell 13)
+## 4.3. Phân tích Kết quả Thực nghiệm & Cách Đọc Hình `fig_res_benchmark.png` (Cell 8 → Cell 12)
 
-### Bảng tổng hợp số liệu thực nghiệm (Trung bình 3 lần lặp ở mỗi quy mô)
+### Bảng tổng hợp số liệu thực nghiệm chuẩn theo [results/benchmark.csv](file:///d:/big%20data/btl_nhóm_3/results/benchmark.csv) & Mục 4.4 Báo cáo (Trung bình 3 lần lặp)
 
 | Quy mô | Số dòng (Dung lượng) | `PySpark MLlib` Tổng TG (`load / prep / train`) | `pandas/sklearn` Tổng TG (`load / prep / train`) | Ai nhanh hơn & Gấp mấy lần? | RAM Đỉnh Spark JVM | RAM Đỉnh Python |
 | :---: | :--- | :---: | :---: | :--- | :---: | :---: |
-| **x1** | `34.833`<br>*(0,19 MB)* | **`9,19s`**<br>*(0,47 / 0,59 / 8,12s)* | **`0,17s`**<br>*(0,006 / 0,002 / 0,158s)* | `sklearn` nhanh hơn **55,36 lần** | `0,82 GB` | `0,23 GB` |
-| **x10** | `348.330`<br>*(9,10 MB)* | **`24,27s`**<br>*(0,41 / 0,56 / 23,31s)* | **`3,38s`**<br>*(0,03 / 0,01 / 3,34s)* | `sklearn` nhanh hơn **7,18 lần** | `1,35 GB` | `0,40 GB` |
-| **x30** | `1.044.990`<br>*(28,88 MB)* | **`75,88s`**<br>*(0,93 / 1,83 / 73,12s)* | **`31,32s`**<br>*(0,36 / 0,08 / 30,89s)* | `sklearn` nhanh hơn **2,42 lần** | `1,98 GB` | `0,72 GB` |
-| **x60** | `2.089.980`<br>*(58,56 MB)* | **`135,35s`**<br>*(2,81 / 5,04 / 127,50s)* | **`40,31s`**<br>*(0,23 / 0,06 / 40,02s)* | `sklearn` nhanh hơn **3,36 lần** | **`2,67 GB`** | **`1,23 GB`** |
+| **x1** | `34.833`<br>*(0,19 MB)* | **`16,23s`**<br>*(0,54 / 0,77 / 14,92s)* | **`0,56s`**<br>*(0,013 / 0,005 / 0,545s)* | `sklearn` nhanh hơn **28,83 lần** | `1,29 GB` | `0,27 GB` |
+| **x10** | `348.330`<br>*(9,10 MB)* | **`46,70s`**<br>*(0,76 / 1,20 / 44,74s)* | **`9,48s`**<br>*(0,114 / 0,026 / 9,336s)* | `sklearn` nhanh hơn **4,93 lần** | `2,26 GB` | `0,35 GB` |
+| **x30** | `1.044.990`<br>*(28,88 MB)* | **`69,64s`**<br>*(1,46 / 2,39 / 65,80s)* | **`25,39s`**<br>*(0,220 / 0,036 / 25,132s)* | `sklearn` nhanh hơn **2,74 lần** | `2,52 GB` | `0,64 GB` |
+| **x60** | `2.089.980`<br>*(58,56 MB)* | **`106,54s`**<br>*(1,69 / 3,87 / 100,98s)* | **`76,26s`**<br>*(0,632 / 0,125 / 75,501s)* | `sklearn` chỉ còn nhanh hơn **1,40 lần** | **`3,24 GB`** | **`1,06 GB`** |
 
 ### 📊 Cách phân tích 3 khung của Hình [fig_res_benchmark.png](file:///d:/big%20data/btl_nhóm_3/figures/fig_res_benchmark.png) khi vấn đáp:
 1. **Khung (a) — Tổng thời gian theo quy mô dữ liệu:**
-   * Đường màu cam (`PySpark`) luôn nằm trên đường màu xanh (`pandas/sklearn`) do trên **1 máy đơn (`local[*]`)** và dữ liệu `58,56 MB` vẫn nằm lọt thỏm trong RAM, Spark phải chịu **chi phí điều phối cố định (`Overhead` ~8–9 giây ngay ở mức x1)** cho việc lập lịch đồ thị DAG, quản lý 12 phân vùng và tuần tự hóa dữ liệu trong JVM.
-   * **Điểm mấu chốt ăn điểm:** Hãy nhìn **tốc độ phình thời gian** khi dữ liệu tăng **60 lần (`x1 → x60`)**: thời gian của `pandas/sklearn` tăng gấp **`242,8 lần`** (`0,17s → 40,31s`), còn thời gian của `PySpark` chỉ tăng **`14,7 lần`** (`9,19s → 135,35s`)! Tốc độ thu hẹp khoảng cách từ `55,36 lần` xuống `2,42 – 3,36 lần` chứng minh khả năng mở rộng theo quy mô (*Scalability*) của Spark nhờ thuật toán chia giỏ xấp xỉ Histogram (`maxBins = 32`).
-   * *(Lưu ý nâng cao nếu thầy hỏi tại sao ở `x60` thanh râu sai số `errorbar` của Spark rộng `±36s`: Vì ở `x60`, RAM của Spark JVM đạt **`2,67 GB`**, chạm sát ngưỡng cấp phát tối đa `spark.driver.memory = 3g` nên JVM phải kích hoạt bộ dọn rác bộ nhớ Garbage Collection nhiều hơn ở lần chạy đầu `170s` so với lần chạy thứ ba `97s`!)*.
+   * Đường màu cam (`PySpark`) nằm trên đường màu xanh (`pandas/sklearn`) do trên **1 máy đơn (`local[*]`)** và dữ liệu `58,56 MB` vẫn nằm lọt trong RAM, Spark phải chịu **chi phí điều phối cố định (`Overhead` ~15 giây ngay ở mức x1)** cho việc lập lịch đồ thị DAG, quản lý 12 phân vùng và tuần tự hóa dữ liệu trong JVM.
+   * **Điểm mấu chốt ăn điểm:** Hãy nhìn **tốc độ phình thời gian** khi dữ liệu tăng **60 lần (`x1 → x60`)**: thời gian của `pandas/sklearn` tăng vọt **`135,5 lần`** (`0,563s → 76,259s`), trong khi thời gian của `PySpark` chỉ tăng có **`6,6 lần`** (`16,230s → 106,540s`)! Tốc độ thu hẹp khoảng cách từ `28,83 lần` xuống sát nút **`1,40 lần`** chứng minh khả năng mở rộng theo quy mô (*Scalability*) vượt trội của Spark nhờ thuật toán chia giỏ xấp xỉ Histogram (`maxBins = 32`).
 2. **Khung (b) — Biểu đồ cột chồng phân rã 3 giai đoạn `Load / Prep / Train`:**
-   * Phần màu đậm nhất trên cùng (**`Train`**) chiếm trên **90–99%** tổng thời gian ở cả hai công cụ.
-   * Tuy nhiên ở cột gạch chéo của Spark, hai tầng dưới (**`Load` + `Prep`** dùng `VectorAssembler` và `cache`) mất tới `7,85 giây` ở `x60`, trong khi `pandas/sklearn` chỉ mất `0,29 giây` nhờ đọc trực tiếp cột Parquet vào mảng bộ nhớ liên tục NumPy `float32`.
+   * Phần màu đậm nhất trên cùng (**`Train`**) chiếm trên **92–99%** tổng thời gian ở cả hai công cụ.
+   * Tuy nhiên ở cột gạch chéo của Spark, hai tầng dưới (**`Load` + `Prep`** dùng `VectorAssembler` và `cache`) mất `5,56 giây` ở `x60`, trong khi `pandas/sklearn` chỉ mất `0,76 giây` nhờ đọc trực tiếp cột Parquet vào mảng bộ nhớ liên tục NumPy `float32`.
 3. **Khung (c) — RAM đỉnh (`Peak RAM`):**
-   * JVM của Spark cấp phát vùng nhớ Heap nền lớn ngay từ đầu (`0,82 GB` ở `x1` tăng tuyến tính mượt lên `2,67 GB` ở `x60`), cao hơn khoảng gấp đôi so với Python (`0,23 GB` lên `1,23 GB`).
-   * **Kết luận thực tiễn:** Với bài toán quy mô 1 trạm đo (~35 nghìn đến vài triệu dòng vừa RAM 1 máy), **`pandas/scikit-learn` là lựa chọn tối ưu, đơn giản, nhanh và tiết kiệm tài nguyên hơn**. Khi mở rộng lên hàng nghìn trạm đo toàn quốc (hàng trăm triệu – hàng tỷ dòng, dung lượng hàng trăm GB vượt quá RAM 1 máy khiến `pandas` bị sập `OutOfMemory`), **`PySpark` trên cụm phân tán nhiều máy chủ là giải pháp bắt buộc** nhờ khả năng tràn đĩa (*Disk Spill*) và mở rộng ngang (*Horizontal Scaling*).
+   * JVM của Spark cấp phát vùng nhớ Heap nền lớn (`1,29 GB` ở `x1` lên `3,24 GB` ở `x60`), cao hơn so với Python (`0,27 GB` lên `1,06 GB`).
+   * **Kết luận thực tiễn:** Với bài toán quy mô 1 trạm đo (~35 nghìn đến ~2 triệu dòng vừa RAM 1 máy), **`pandas/scikit-learn` là lựa chọn tối ưu, đơn giản, nhanh và tiết kiệm tài nguyên hơn**. Khi mở rộng lên hàng nghìn trạm đo toàn quốc (hàng trăm triệu – hàng tỷ dòng, dung lượng hàng trăm GB vượt quá RAM 1 máy khiến `pandas` bị sập `OutOfMemory`), **`PySpark` trên cụm phân tán nhiều máy chủ là giải pháp bắt buộc** nhờ khả năng tràn đĩa (*Disk Spill*) và mở rộng ngang (*Horizontal Scaling*).
 
 ---
 
@@ -430,4 +470,58 @@ def lay_mau_ram():
 * **Hỏi 1:** *Tại sao trong hàm `chay_spark` ở Note 4 không dùng `XGBoost` luôn mà lại dùng `RandomForestRegressor` để đua với `scikit-learn`?*
   > **Đáp:** Dạ, vì thư viện chuẩn tích hợp gốc của Apache Spark (`pyspark.ml.regression`) cung cấp sẵn `RandomForestRegressor` bản phân tán gốc (native JVM) có cơ chế cây song song tương đồng trực tiếp với `RandomForestRegressor` của `scikit-learn`, giúp đặt thông số đối xứng công bằng (`50 cây, maxDepth=10, 1/3 số đặc trưng`) để đo thuần túy sự khác biệt về kiến trúc hệ thống giữa Spark và đơn máy.
 * **Hỏi 2:** *Hai thuật toán Random Forest của `Spark MLlib` và `scikit-learn` khi chạy cùng `50 cây, độ sâu 10` có làm việc giống hệt nhau 100% ở bên trong không?*
-  > **Đáp:** Dạ không giống hệt 100% về thuật toán tìm điểm cắt nhánh: `scikit-learn` sắp xếp toàn bộ giá trị liên tục để tìm **điểm cắt chính xác tuyệt đối (*exact split*)** — rất chính xác nhưng khi dữ liệu lớn thời gian tăng cực nhanh (242,8 lần); còn `Spark MLlib` chia giá trị liên tục thành **32 giỏ xấp xỉ (*histogram binning, `maxBins=32`*)** để không phải sắp xếp toàn bộ dữ liệu qua mạng phân tán — nhờ đó thời gian tăng chậm hơn rất nhiều (chỉ 14,7 lần). Vì thế Note 4 so sánh **hiệu năng hệ thống (thời gian & RAM)** chứ không so sánh sai số giữa hai bên.
+  > **Đáp:** Dạ không giống hệt 100% về thuật toán tìm điểm cắt nhánh: `scikit-learn` sắp xếp toàn bộ giá trị liên tục để tìm **điểm cắt chính xác tuyệt đối (*exact split*)** — rất chính xác nhưng khi dữ liệu lớn thời gian tăng cực nhanh (`135,5 lần`); còn `Spark MLlib` chia giá trị liên tục thành **32 giỏ xấp xỉ (*histogram binning, `maxBins=32`*)** để không phải sắp xếp toàn bộ dữ liệu qua mạng phân tán — nhờ đó thời gian tăng chậm hơn rất nhiều (chỉ `6,6 lần`). Vì thế Note 4 so sánh **hiệu năng hệ thống (thời gian & RAM)** chứ không so sánh sai số giữa hai bên.
+
+---
+
+# PHẦN 5: PHÂN TÍCH TỪNG DÒNG CODE ỨNG DỤNG WEB DEMO GRADIO (`demo/app.py`)
+**File tương ứng:** [demo/app.py](file:///d:/big%20data/btl_nhóm_3/demo/app.py) *(Chiếm 10% tổng điểm — Khớp 100% Mục 3.7 & 4.5 Báo cáo)*
+
+## 5.1. Giải thích 4 Khối Code trong `demo/app.py` (Đọc hiểu từng dòng để tự tin trình diễn)
+
+### 🔹 Khối 1 (Dòng 22–45): Định vị đường dẫn tự động & Nạp gói mô hình `.joblib`
+```python
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "demo_model.joblib")
+bundle = joblib.load(MODEL_PATH)
+model = bundle["model"]
+DEMO_FEATURES = bundle["features"]  # 10 cột: hour, day_of_week, month, is_holiday, temp_c, clouds_all, is_weekend, is_rush_hour, hour_sin, hour_cos
+P50 = float(bundle["p50"])          # 3,356 xe/giờ
+P85 = float(bundle["p85"])          # 5,484 xe/giờ
+```
+* **Tại sao viết `os.path.dirname(os.path.dirname(os.path.abspath(__file__)))`?**
+  * `__file__` là vị trí của `demo/app.py`; gọi `dirname` lần 1 lấy ra thư mục `demo/`, gọi `dirname` lần 2 lấy ra thư mục gốc `btl_nhóm_3/`. Nhờ vậy bạn đứng ở bất kỳ thư mục nào gõ `python demo/app.py` hay `cd demo && python app.py` chương trình đều tìm đúng file `models/demo_model.joblib` không bao giờ báo lỗi `FileNotFoundError`!
+* **`MAP_THU = {ten: idx for idx, ten in enumerate(DANH_SACH_THU)}`:** Đổi chữ tiếng Việt người dùng chọn trên giao diện (`"Thứ Hai" → 0`, `"Thứ Ba" → 1`, ..., `"Chủ Nhật" → 6`) khớp 100% quy ước `.dt.dayofweek` của `pandas` ở `note_02`!
+
+### 🔹 Khối 2 (Dòng 55–107): Hàm trái tim `du_bao_giao_thong(...)` — Từ 6 đầu vào tự tính thành 10 đặc trưng
+```python
+is_weekend = 1 if day_of_week >= 5 else 0
+khung_cao_diem = (7 <= hour <= 9) or (16 <= hour <= 18)
+ngay_lam_viec = (is_weekend == 0) and (is_holiday == 0)
+is_rush_hour = 1 if (khung_cao_diem and ngay_lam_viec) else 0
+hour_sin = float(np.sin(2.0 * np.pi * hour / 24.0))
+hour_cos = float(np.cos(2.0 * np.pi * hour / 24.0))
+
+du_lieu_dau_vao = pd.DataFrame([{...}])[DEMO_FEATURES]
+du_bao_so = float(model.predict(du_lieu_dau_vao.values)[0])
+luu_luong = max(0, int(round(du_bao_so)))
+```
+* **3 chi tiết kỹ thuật cực kỳ chặt chẽ trong hàm này:**
+  1. **Tự động hóa Feature Engineering:** Người dùng phổ thông không cần biết hàm `sin/cos` hay quy tắc giờ cao điểm là gì — chỉ cần nhập 6 ô cơ bản, hàm tự động tính `is_weekend`, `is_rush_hour`, `hour_sin`, `hour_cos` giống hệt công thức ở `note_02`.
+  2. **`[DEMO_FEATURES]`:** Ép thứ tự 10 cột của bảng 1 dòng khớp chính xác từng vị trí cột lúc mô hình `XGBoost` được huấn luyện.
+  3. **`max(0, int(round(du_bao_so)))` & Phân tầng `P50 / P85`:** Làm tròn thành số nguyên xe/giờ, chặn dưới không bao giờ âm, sau đó so sánh với `P50 = 3.356` và `P85 = 5.484` để trả về cả con số dự báo lẫn mức cảnh báo (*Thông thoáng* / *Đông đúc* / *Nguy cơ ùn tắc*).
+
+### 🔹 Khối 3 (Dòng 117–208): Hàm `chay_kiem_thu_4_kich_ban()` — Tự động xuất bảng kiểm thử Mục 4.5
+* Ngay khi chạy file `app.py`, hàm này tự động đưa 4 kịch bản tiêu biểu (Cao điểm sáng Thứ Ba `5.887` xe; Đêm khuya 3h sáng `345` xe; Chiều Chủ Nhật `4.319` xe; Sáng Thứ Ba nghỉ lễ `4.450` xe) qua mô hình và xuất ra [results/demo_scenarios_log.csv](file:///d:/big%20data/btl_nhóm_3/results/demo_scenarios_log.csv) + `.txt` để đối chiếu số liệu báo cáo.
+
+### 🔹 Khối 4 (Dòng 217–257): Hàm `tao_giao_dien_gradio()` & Cách chạy khi bảo vệ
+* Tạo 6 thanh trượt/hộp chọn (`gr.Slider`, `gr.Dropdown`, `gr.Checkbox`, `gr.Number`) và gắn sẵn `examples=cac_vi_du_mau` (4 nút kịch bản mẫu bên dưới giao diện để lúc lên bảng thuyết trình bạn chỉ cần **bấm 1 cú click chuột** là tự điền thông số ngay, không mất thời gian gõ tay!).
+* **Lệnh chạy Demo khi thầy yêu cầu bật thử:**
+  ```powershell
+  python demo/app.py
+  ```
+  Sau đó mở trình duyệt tại địa chỉ `http://127.0.0.1:7860`!
+
+## 5.2. Câu hỏi vấn đáp riêng cho Phần 5 (`demo/app.py`)
+* **Hỏi:** *Tại sao mô hình trong `note_03` đạt `MAE = 138,88` xe (Bộ B — 26 biến), mà đưa lên App Demo lại dùng mô hình 10 biến không có biến trễ (`MAE = 225,63` xe, `R² = 96,38%`)?*
+  > **Đáp:** Dạ, đó chính là lý do ngay từ đầu đề tài nhóm thiết kế đối sánh **Bộ A (không trễ)** và **Bộ B (có trễ)**: Bộ B dùng để nhúng vào hệ thống cảm biến tự động trên cao tốc (nơi máy đếm xe tự truyền `lag_1h` liên tục mỗi giờ); còn App Demo hướng tới người dùng tra cứu kế hoạch di chuyển ở một khung giờ bất kỳ trong tương lai (không thể biết trước `lag_1h` của giờ đó) và cần giao diện gọn nhẹ 6 đầu vào, nhưng nhờ sức mạnh phi tuyến của `XGBoost` và cặp biến `hour_sin/cos`, `is_rush_hour`, mô hình Demo vẫn đạt độ chính xác rất cao (**`R² = 96,38%`**, `MAPE < 10%`)!

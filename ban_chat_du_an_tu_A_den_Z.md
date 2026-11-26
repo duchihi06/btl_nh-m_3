@@ -1,5 +1,5 @@
-# Cẩm Nang Bản Chất Dự Án Từ A Đến Z (Theo Đúng Trình Tự Nhân – Quả 7 Bước)
-## Từ Thu Thập Dữ Liệu → Đọc Hiểu EDA Để Bắt Bệnh → Tiền Xử Lý → Tạo Đặc Trưng & Xuất Parquet/JSON → Thiết Kế Model & Tham Số → Đánh Giá → Thực Nghiệm Big Data PySpark
+# Cẩm Nang Bản Chất Dự Án Từ A Đến Z (Theo Đúng Chuỗi Nhân – Quả Toàn Dự Án)
+## Từ Thu Thập Dữ Liệu → Đọc Hiểu EDA Để Bắt Bệnh → Tiền Xử Lý → Tạo Đặc Trưng & Xuất Parquet/JSON → Thiết Kế Model & Tham Số → Đánh Giá → Thực Nghiệm Big Data PySpark → Ứng Dụng Web Demo Gradio
 
 > **Cách đọc tài liệu này để hiểu thông suốt 100% dự án:**
 > * **Mở file này ở chế độ Xem trước Markdown (nhấn `Ctrl + Shift + V` trên VS Code)** để nhìn thấy **toàn bộ các biểu đồ EDA và biểu đồ kết quả hiện ra trực tiếp ngay trong bài**!
@@ -31,6 +31,7 @@
 | | **Siêu tham số (`Hyperparameters`) & `TimeSeriesSplit`** | *Siêu tham số* là các nút vặn cài đặt cho mô hình. `TimeSeriesSplit` là chia tập `Train` thành 4 vòng thi thử nối tiếp từ quá khứ đến tương lai để chọn nút vặn tốt nhất. |
 | | **`Bagging` (`Random Forest`) vs `Boosting` (`XGBoost`)** | `Random Forest` cho 100 cây làm độc lập song song rồi lấy trung bình; `XGBoost` xếp 300 cây nối đuôi nhau, cây sau chuyên sửa phần sai số của cây trước. |
 | | **`PySpark` / `JVM` / `DAG` / `Lazy Evaluation` / `Overhead`** | `PySpark` là công cụ Big Data phân tán chạy trên Máy ảo Java (`JVM`), lập bản đồ kế hoạch (`DAG`) đợi lệnh `.count()`/`.fit()` mới chạy thật (`Lazy Evaluation`), chịu chi phí thủ tục ban đầu (`Overhead`) nhưng mở rộng được ra nhiều máy (`Scalability`). |
+| **Triển khai & Demo** | **`.joblib` & `Gradio` & Ngưỡng `P50 / P85`** | `.joblib` là hộp đóng gói mô hình đã học xong xuống ổ cứng; `Gradio` tạo giao diện Web dự báo trực tiếp; `P50` (trung vị 50%) và `P85` (mức 85% đông nhất tập Train) dùng chia 3 mức cảnh báo giao thông. |
 
 ---
 
@@ -313,11 +314,33 @@ Khi làm sạch và tạo xong đặc trưng ở Note 2, dữ liệu đang nằm
 ### 7.2. Nhìn Hình Kết quả Benchmark để rút ra bài học cốt lõi của môn Big Data:
 ![Kết quả Benchmark PySpark vs pandas/scikit-learn](figures/fig_res_benchmark.png)
 
-1. **Nhìn khung (a) & (b) — Về Thời gian chạy:**
-   * Trên 1 chiếc laptop đơn lẻ với dữ liệu tối đa `58,56 MB` (nằm quá dư dả trong thanh RAM 8 GB), **`pandas/scikit-learn` luôn chạy nhanh hơn `PySpark`** (`0,17s` vs `9,19s` ở `x1`; `40,31s` vs `135,35s` ở `x60`). *Nguyên nhân:* `PySpark` phải tốn **chi phí điều phối cố định (`Overhead`)** cho việc lập đồ thị kế hoạch `DAG`, chia 12 phân vùng `Partitions`, gom cột `VectorAssembler` và giao tiếp với Máy ảo Java `JVM`.
-   * **Tuy nhiên, hãy nhìn độ dốc mở rộng (`Scalability`):** Khi dữ liệu tăng **60 lần (`x1 → x60`)**, thời gian chạy của `pandas/sklearn` bị phình gấp **`242,8 lần`**, trong khi thời gian của `PySpark` chỉ tăng có **`14,7 lần`** (khoảng cách từ chỗ chậm hơn `55,36 lần` rút ngắn nhanh chóng xuống chỉ còn `2,42 – 3,36 lần`)!
+1. **Nhìn khung (a) & (b) — Về Thời gian chạy (Số liệu thực tế trong `results/benchmark.csv` & Mục 4.4 Báo cáo):**
+   * Trên 1 chiếc laptop đơn lẻ với dữ liệu tối đa `58,56 MB` (nằm gọn trong thanh RAM 8 GB), **`pandas/scikit-learn` chạy nhanh hơn `PySpark`** ở cả 4 mốc (`0,56s` vs `16,23s` ở `x1`; `9,48s` vs `46,70s` ở `x10`; `25,39s` vs `69,64s` ở `x30`; và `76,26s` vs `106,54s` ở `x60`). *Nguyên nhân:* `PySpark` phải tốn **chi phí điều phối cố định (`Overhead` ~15 giây ngay từ mức x1)** cho việc lập đồ thị kế hoạch `DAG`, chia 12 phân vùng `Partitions`, gom cột `VectorAssembler` và giao tiếp với Máy ảo Java `JVM`.
+   * **Tuy nhiên, hãy nhìn độ dốc mở rộng (`Scalability`) cực kỳ ấn tượng:** Khi dữ liệu tăng **60 lần (`x1 → x60`)**, thời gian chạy của `pandas/sklearn` bị phình gấp **`135,5 lần`** (`0,56s → 76,26s`), trong khi thời gian của `PySpark` chỉ tăng có **`6,6 lần`** (`16,23s → 106,54s`)! Khoảng cách từ chỗ `PySpark` chậm hơn **`28,83 lần`** ở `x1` đã thu hẹp sát nút xuống chỉ còn **`1,40 lần`** ở `x60`!
 2. **Nhìn khung (c) — Về Bộ nhớ RAM & Giới hạn sinh tử:**
-   * `Spark JVM` chiếm nhiều RAM nền hơn (`2,67 GB` so với `1,23 GB` của Python ở mức `x60`).
+   * `Spark JVM` chiếm nhiều RAM nền hơn (`3,24 GB` so với `1,06 GB` của Python ở mức `x60`).
    * **Khi nào dùng cái nào?**
      * Với dữ liệu vừa và nhỏ nằm gọn trong RAM của 1 máy tính (như bài toán 1 trạm đo của đề tài): **Dùng `pandas/scikit-learn` (và `XGBoost`)** vì nhanh, gọn, không tốn chi phí điều phối.
      * Khi dữ liệu thực tế mở rộng lên hàng nghìn trạm đo cả nước (hàng trăm triệu – hàng tỷ dòng, dung lượng hàng trăm GB vượt quá RAM của 1 máy đơn khiến `pandas/sklearn` bị tràn bộ nhớ `OutOfMemory` và sập hoàn toàn): **Bắt buộc phải dùng `PySpark`** nhờ khả năng tràn tạm xuống ổ cứng (`Disk Spill`) và chia tải chạy song song trên cụm hàng chục máy chủ!
+
+---
+
+# BƯỚC 8: ĐÓNG GÓI MÔ HÌNH & ỨNG DỤNG WEB DEMO (`demo/app.py` — Barem 10% Điểm Của Thầy)
+
+### 8.1. Tại sao App Demo lại thiết kế 6 ô nhập liệu và dùng mô hình Không Biến Trễ (`models/demo_model.joblib`)?
+* **Vấn đề thực tế:** Mô hình Bộ B (`26` biến) tuy có sai số thấp nhất (`MAE = 138,88` xe), nhưng nó đòi hỏi phải biết `lag_1h` (số xe của đúng 1 giờ trước). Khi một người dân hoặc cán bộ điều phối muốn mở Web lên hỏi: *"Sáng Thứ Ba tuần sau lúc 8h trời 15°C thì cao tốc có tắc không?"*, họ **không thể biết trước số xe lúc 7h sáng tuần sau**! Đồng thời, nếu bắt người dùng ngồi tích chọn cả 11 ô One-Hot thời tiết (`wm_Clear`, `wm_Mist`...) thì giao diện sẽ rất rối.
+* **Giải pháp thông minh của nhóm:**
+  1. Đóng gói mô hình `XGBoost` huấn luyện trên **10 đặc trưng Lịch & Thời tiết cốt lõi thuộc Bộ A** (`MAE = 225,63` xe, `MAPE = 9,98%`, `R² = 96,38%`) vào file [models/demo_model.joblib](file:///d:/big%20data/btl_nhóm_3/models/demo_model.joblib) kèm 2 ngưỡng cảnh báo tính sẵn trên `y_train`: **`P50 = 3.356` xe/giờ** và **`P85 = 5.484` xe/giờ**.
+  2. Trên giao diện Web **Gradio** ([demo/app.py](file:///d:/big%20data/btl_nhóm_3/demo/app.py)), người dùng chỉ cần kéo/chọn **6 thông số đời thường**: *(1) Giờ `0–23h`, (2) Thứ `Thứ Hai → Chủ Nhật`, (3) Tháng `1–12`, (4) Có phải Ngày lễ không, (5) Nhiệt độ `°C`, (6) Độ phủ mây `%`*.
+  3. Ngay bên dưới hậu trường, hàm `du_bao_giao_thong` tự động dùng đúng công thức của `Note 02` để tính thêm **4 đặc trưng phái sinh** (`is_weekend`, `is_rush_hour`, `hour_sin`, `hour_cos`), ghép đủ **10 cột** đưa vào `XGBoost` dự báo ra số xe trong `0,01` giây!
+
+### 8.2. Cơ chế 3 mức cảnh báo (`P50 / P85`) & Kiểm chứng 4 kịch bản thực tế (Bảng 4.5 Báo cáo)
+* **Cách đổi từ con số khô khan sang lời cảnh báo hành động:**
+  * 🟢 **`< 3.356` xe/giờ (`< P50`):** **Thông thoáng** (dưới mức trung vị lịch sử).
+  * 🟡 **`3.356 – 5.483` xe/giờ (`P50 → P85`):** **Đông đúc** (cao hơn trung bình nhưng chưa quá tải).
+  * 🔴 **`>= 5.484` xe/giờ (`>= P85` — Top 15% giờ căng thẳng nhất lịch sử):** **Nguy cơ ùn tắc** (cần bật biển báo phân luồng sớm!).
+* **Kết quả chạy 4 kịch bản kiểm thử tự động trong `demo/app.py` (chứng minh AI đã hiểu đúng quy luật đời thực):**
+  1. **Kịch bản 1 *(8h sáng Thứ Ba, không lễ, 15°C, mây 40%)*:** Dự báo **`5.887` xe/giờ** $\rightarrow$ 🔴 **Nguy cơ ùn tắc** (đúng đỉnh cao điểm đi làm buổi sáng!).
+  2. **Kịch bản 2 *(3h sáng Thứ Ba, không lễ, 10°C, mây 20%)*:** Dự báo **`345` xe/giờ** $\rightarrow$ 🟢 **Thông thoáng** (đúng đêm khuya vắng xe!).
+  3. **Kịch bản 3 *(15h chiều Chủ Nhật, không lễ, 18°C, mây 30%)*:** Dự báo **`4.319` xe/giờ** $\rightarrow$ 🟡 **Đông đúc** (đúng đỉnh thoải đi chơi chiều cuối tuần!).
+  4. **Kịch bản 4 *(Cũng 8h sáng Thứ Ba, 15°C, mây 40% NHƯNG tích chọn Ngày lễ)*:** Dự báo giảm vọt hơn 1.400 xe xuống còn **`4.450` xe/giờ** $\rightarrow$ 🟡 **Đông đúc** (chứng minh cờ `is_holiday = 1` và việc tắt `is_rush_hour = 0` trong ngày lễ hoạt động cực kỳ chuẩn xác!).
